@@ -408,6 +408,8 @@ with st.sidebar:
         cmd = [sys.executable, "scripts/market_data.py"] + symbols
         if port:
             cmd += ["--port", port]
+        if not st.session_state.get("tg_fetch", True):
+            cmd += ["--no-telegram"]
         with st.spinner(f"Fetching {', '.join(symbols)}..."):
             result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
@@ -449,6 +451,12 @@ with st.sidebar:
                 snapshot = load_snapshot()
                 messages = build_messages(snapshot, extra_ctx, symbols=analysis_syms)
                 reply, provider = chat(messages)
+                if st.session_state.get("tg_ai", True):
+                    from tools.telegram import send_message
+                    ts = snapshot.get("timestamp", "")[:16].replace("T", " ")
+                    send_message(
+                        f"<b>AI Analysis — {', '.join(analysis_syms)} — {ts} UTC</b>\n\n{reply}"
+                    )
             st.session_state.analysis          = reply
             st.session_state.analysis_provider = provider
             st.session_state.analysis_messages = messages
@@ -458,14 +466,11 @@ with st.sidebar:
 
     st.divider()
 
-    # Telegram toggle
+    # Telegram toggles
     st.subheader("Telegram")
     tg_default = os.getenv("TELEGRAM_ENABLED", "true").strip().lower() == "true"
-    tg_enabled = st.toggle("Send Telegram notifications", value=tg_default)
-    if tg_enabled != tg_default:
-        os.environ["TELEGRAM_ENABLED"] = "true" if tg_enabled else "false"
-        import tools.telegram as _tg
-        _tg.ENABLED = tg_enabled
+    tg_fetch   = st.toggle("Notify on IBKR fetch", value=tg_default, key="tg_fetch")
+    tg_ai      = st.toggle("Notify on AI analysis", value=tg_default, key="tg_ai")
 
     st.divider()
     if st.button("Clear Chat", use_container_width=True):

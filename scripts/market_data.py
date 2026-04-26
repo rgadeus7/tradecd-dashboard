@@ -500,7 +500,7 @@ def enrich_cross_tf_fbd_fbo(sym_data: dict) -> None:
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
-def fetch_all(symbols=None, force_port=None):
+def fetch_all(symbols=None, force_port=None, telegram=True):
     """
     Fetch market data for given symbols and save snapshot.
     symbols: list of tickers e.g. ["ES", "SPY", "QQQ", "SMH"]
@@ -574,7 +574,8 @@ def fetch_all(symbols=None, force_port=None):
         print(f"\nSnapshot saved -> {OUTPUT_PATH}  (symbols: {list(existing_symbols.keys())})")
 
         # Send Telegram notification for fetched symbols only
-        notify_snapshot(snapshot, symbols=symbols)
+        if telegram:
+            notify_snapshot(snapshot, symbols=symbols)
 
         return snapshot
 
@@ -585,7 +586,7 @@ def fetch_all(symbols=None, force_port=None):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    port = int(args[args.index("--port") + 1]) if "--port" in args else None
-    # All non-flag args are symbol tickers: python market_data.py QQQ SMH --port 4001
-    syms = [a for a in args if not a.startswith("--") and not a.lstrip("-").isdigit()]
-    fetch_all(symbols=syms or None, force_port=port)
+    port       = int(args[args.index("--port") + 1]) if "--port" in args else None
+    no_tg      = "--no-telegram" in args
+    syms       = [a for a in args if not a.startswith("--") and not a.lstrip("-").isdigit()]
+    fetch_all(symbols=syms or None, force_port=port, telegram=not no_tg)
