@@ -218,11 +218,25 @@ def render_tf_card(tf, tf_data):
         if bb:
             st.caption(
                 f"BB — Basis: {_price(bb.get('basis'))}  |  "
-                f"2SD: {_price(bb.get('lower_2'))} / {_price(bb.get('upper_2'))}  |  "
                 f"2.5SD: {_price(bb.get('lower_25'))} / {_price(bb.get('upper_25'))}  |  "
-                f"3SD: {_price(bb.get('lower_3'))} / {_price(bb.get('upper_3'))}  |  "
                 f"Position: {_price(bb.get('position'))}%  |  "
                 f"Width: {_price(bb.get('width_pct'))}%"
+            )
+
+        mm = tf_data.get("murrey", {})
+        if mm:
+            mzone = mm.get("zone", 0)
+            mlbl  = mm.get("zone_label", "Normal")
+            zone_color = "🔴" if mzone >= 2 else "🟡" if mzone >= 1 else "🟢" if mzone <= -2 else "🟡" if mzone <= -1 else "⚪"
+            st.caption(
+                f"Murrey Math {zone_color} {mlbl}  |  "
+                f"+2/8: {_price(mm.get('plus_28'))}  "
+                f"+1/8: {_price(mm.get('plus_18'))}  "
+                f"8/8: {_price(mm.get('eight_eight'))}  "
+                f"4/8: {_price(mm.get('four_eight'))}  "
+                f"0/8: {_price(mm.get('zero_eight'))}  "
+                f"-1/8: {_price(mm.get('minus_18'))}  "
+                f"-2/8: {_price(mm.get('minus_28'))}"
             )
 
         if overext and any(k != "flags" for k in overext):

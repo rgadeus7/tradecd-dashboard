@@ -290,6 +290,102 @@ def _sideways(df, weeks):
     return round(rng / close * 100, 2) if close else None
 
 
+def _murrey_math(df, frame=64, mult=1.5):
+    """
+    Calculate Murrey Math levels for the current bar.
+    Translated from Pine Script lib_murrey by Nanda86.
+    Returns a dict of key levels + zone, or None if insufficient data.
+    """
+    import math as _math
+    lookback = max(int(round(frame * mult)), len(df))
+    if len(df) < 8:
+        return None
+
+    # Body prices (ignore wicks) for range calculation
+    u_price = df[["open", "close"]].max(axis=1)
+    l_price = df[["open", "close"]].min(axis=1)
+
+    v_high = float(u_price.iloc[-lookback:].max())
+    v_low  = float(l_price.iloc[-lookback:].min())
+
+    shift    = v_low < 0
+    tmp_high = -v_low if shift else v_high
+    tmp_low  = (-v_low - (v_high - v_low)) if shift else v_low
+
+    log10 = _math.log(10)
+    log8  = _math.log(8)
+    log2  = _math.log(2)
+
+    try:
+        sf_var = _math.log(0.4 * tmp_high) / log10 - _math.floor(_math.log(0.4 * tmp_high) / log10)
+        if tmp_high > 25:
+            SR = (_math.exp(log10 * (_math.floor(_math.log(0.4 * tmp_high) / log10) + 1))
+                  if sf_var > 0 else
+                  _math.exp(log10 * _math.floor(_math.log(0.4 * tmp_high) / log10)))
+        else:
+            SR = 100 * _math.exp(log8 * _math.floor(_math.log(0.005 * tmp_high) / log8))
+
+        n_var1 = _math.log(SR / (tmp_high - tmp_low)) / log8
+        n_var2 = n_var1 - _math.floor(n_var1)
+        N = 0.0 if n_var1 <= 0 else (_math.floor(n_var1) if n_var2 == 0 else _math.floor(n_var1) + 1)
+
+        SI = SR * _math.exp(-N * log8)
+        M  = _math.floor(1.0 / log2 * _math.log((tmp_high - tmp_low) / SI) + 1e-7)
+        I  = round((tmp_high + tmp_low) * 0.5 / (SI * _math.exp((M - 1) * log2)))
+        Bot = (I - 1) * SI * _math.exp((M - 1) * log2)
+        Top = (I + 1) * SI * _math.exp((M - 1) * log2)
+
+        do_shift = (tmp_high - Top > 0.25 * (Top - Bot)) or (Bot - tmp_low > 0.25 * (Top - Bot))
+        ER = 1.0 if do_shift else 0.0
+        MM = (M + 1 if M < 2 else 0.0) if ER == 1 else M
+        NN = (N if M < 2 else N - 1) if ER == 1 else N
+
+        if ER == 1:
+            fSI  = SR * _math.exp(-NN * log8)
+            fI   = round((tmp_high + tmp_low) * 0.5 / (fSI * _math.exp((MM - 1) * log2)))
+            fBot = (fI - 1) * fSI * _math.exp((MM - 1) * log2)
+            fTop = (fI + 1) * fSI * _math.exp((MM - 1) * log2)
+        else:
+            fSI, fBot, fTop = SI, Bot, Top
+
+        inc    = (fTop - fBot) / 8.0
+        abs_top = -(fBot - 3 * inc) if shift else fTop + 3 * inc
+
+        levels = {
+            "plus_28":    round(abs_top - 1 * inc, 4),   # +2/8 Extreme Overshoot
+            "plus_18":    round(abs_top - 2 * inc, 4),   # +1/8 Overshoot
+            "eight_eight":round(abs_top - 3 * inc, 4),   # 8/8 Ultimate Resistance
+            "seven_eight":round(abs_top - 4 * inc, 4),   # 7/8 Weak / Stop & Reverse
+            "six_eight":  round(abs_top - 5 * inc, 4),   # 6/8 Strong Pivot
+            "five_eight": round(abs_top - 6 * inc, 4),   # 5/8 Top of Range
+            "four_eight": round(abs_top - 7 * inc, 4),   # 4/8 Major S/R Pivot
+            "three_eight":round(abs_top - 8 * inc, 4),   # 3/8 Bottom of Range
+            "two_eight":  round(abs_top - 9 * inc, 4),   # 2/8 Strong Pivot
+            "one_eight":  round(abs_top - 10 * inc, 4),  # 1/8 Weak / Stop & Reverse
+            "zero_eight": round(abs_top - 11 * inc, 4),  # 0/8 Ultimate Support
+            "minus_18":   round(abs_top - 12 * inc, 4),  # -1/8 Oversold
+            "minus_28":   round(abs_top - 13 * inc, 4),  # -2/8 Extreme Oversold
+            "increment":  round(inc, 4),
+        }
+
+        close = float(df.iloc[-1]["close"])
+        zone  = (2.0 if close >= levels["plus_28"] else
+                 1.0 if close >= levels["plus_18"] else
+                -2.0 if close <= levels["minus_28"] else
+                -1.0 if close <= levels["minus_18"] else 0.0)
+        zone_label = ("Extreme Overshoot" if zone >= 2 else
+                      "Overshoot"         if zone >= 1 else
+                      "Extreme Oversold"  if zone <= -2 else
+                      "Oversold"          if zone <= -1 else "Normal")
+
+        levels["zone"]       = zone
+        levels["zone_label"] = zone_label
+        return levels
+
+    except (ValueError, ZeroDivisionError, OverflowError):
+        return None
+
+
 def _detect_fbd_fbo(current_bar, prior_bars):
     """
     Detect Failed Breakdown (FBD) and Failed Breakout (FBO) against a list of prior bar dicts.
@@ -396,6 +492,11 @@ def build_tf_snapshot(tf, df):
 
     if overext:
         snap["overextension"] = {**overext, "flags": flags}
+
+    # ── Murrey Math levels ─────────────────────────────────────────────────────
+    mm = _murrey_math(df)
+    if mm:
+        snap["murrey"] = mm
 
     # ── Sideways detection (weekly only) ──────────────────────────────────────
     if tf == "weekly":

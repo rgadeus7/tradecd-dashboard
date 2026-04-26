@@ -106,27 +106,26 @@ def _reversal(tf_data: dict) -> tuple[int, str, list]:
     flags  = overxt.get("flags", [])
     sw     = tf_data.get("sideways", {})
 
-    # BB band breaches — check close AND high/low wick touches
-    upper_3  = bb.get("upper_3")
+    # BB 2.5SD — close breach +2, wick touch +1
     upper_25 = bb.get("upper_25")
-    upper_2  = bb.get("upper_2")
-    lower_3  = bb.get("lower_3")
     lower_25 = bb.get("lower_25")
-    lower_2  = bb.get("lower_2")
 
-    if upper_3  and close >= upper_3:    _add("up", 3, f"Close above BB 3SD upper ({upper_3:.2f})")
-    elif upper_3  and high >= upper_3:   _add("up", 2, f"Wick above BB 3SD upper ({upper_3:.2f})")
-    elif upper_25 and close >= upper_25: _add("up", 2, f"Close above BB 2.5SD upper ({upper_25:.2f})")
-    elif upper_25 and high >= upper_25:  _add("up", 1, f"Wick above BB 2.5SD upper ({upper_25:.2f})")
-    elif upper_2  and high >= upper_2:   _add("up", 1, f"Wick above BB 2SD upper ({upper_2:.2f})")
+    if upper_25 and close >= upper_25:   _add("up", 2, f"Close above BB 2.5SD ({upper_25:.2f})")
+    elif upper_25 and high >= upper_25:  _add("up", 1, f"Wick above BB 2.5SD ({upper_25:.2f})")
     elif bb.get("position", 50) > 80:    _add("up", 1, f"BB position high ({bb.get('position'):.0f}%)")
 
-    if lower_3  and close <= lower_3:    _add("dn", 3, f"Close below BB 3SD lower ({lower_3:.2f})")
-    elif lower_3  and low <= lower_3:    _add("dn", 2, f"Wick below BB 3SD lower ({lower_3:.2f})")
-    elif lower_25 and close <= lower_25: _add("dn", 2, f"Close below BB 2.5SD lower ({lower_25:.2f})")
-    elif lower_25 and low <= lower_25:   _add("dn", 1, f"Wick below BB 2.5SD lower ({lower_25:.2f})")
-    elif lower_2  and low <= lower_2:    _add("dn", 1, f"Wick below BB 2SD lower ({lower_2:.2f})")
+    if lower_25 and close <= lower_25:   _add("dn", 2, f"Close below BB 2.5SD ({lower_25:.2f})")
+    elif lower_25 and low <= lower_25:   _add("dn", 1, f"Wick below BB 2.5SD ({lower_25:.2f})")
     elif bb.get("position", 50) < 20:    _add("dn", 1, f"BB position low ({bb.get('position'):.0f}%)")
+
+    # Murrey Math zone
+    mm    = tf_data.get("murrey", {})
+    mzone = mm.get("zone", 0)
+    mlbl  = mm.get("zone_label", "")
+    if mzone >= 2:    _add("up", 3, f"Murrey {mlbl} (above +2/8 {mm.get('plus_28', 0):.2f})")
+    elif mzone >= 1:  _add("up", 2, f"Murrey {mlbl} (above +1/8 {mm.get('plus_18', 0):.2f})")
+    if mzone <= -2:   _add("dn", 3, f"Murrey {mlbl} (below -2/8 {mm.get('minus_28', 0):.2f})")
+    elif mzone <= -1: _add("dn", 2, f"Murrey {mlbl} (below -1/8 {mm.get('minus_18', 0):.2f})")
 
     # RSI extremes
     if rsi is not None:

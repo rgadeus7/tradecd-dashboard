@@ -132,6 +132,17 @@ def _tf_block(tf, tf_data):
     if sideways:
         lines.append(_sideways_section(sideways))
 
+    # Murrey Math
+    mm = tf_data.get("murrey", {})
+    if mm:
+        mzone = mm.get("zone_label", "Normal")
+        lines.append(
+            f"  Murrey Math: {mzone}  |  "
+            f"8/8: {_price(mm.get('eight_eight'))}  4/8: {_price(mm.get('four_eight'))}  "
+            f"0/8: {_price(mm.get('zero_eight'))}  +1/8: {_price(mm.get('plus_18'))}  "
+            f"-1/8: {_price(mm.get('minus_18'))}"
+        )
+
     # FBD / FBO signals
     fbd = tf_data.get("fbd_levels", [])
     fbo = tf_data.get("fbo_levels", [])
