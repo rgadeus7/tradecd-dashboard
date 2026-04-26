@@ -95,9 +95,14 @@ def format_snapshot(snapshot: dict, symbols: list | None = None) -> str:
         align     = summary.get("tf_alignment", "")
         tf_scores = summary.get("tf_scores", {})
 
+        daily   = sym_data.get("daily", {})
+        weekly  = sym_data.get("weekly", {})
+        close   = daily.get("close") or weekly.get("close")
+        price_str = f" | {close:.2f}" if close else ""
+
         bias_icon = "🟢" if bias == "bullish" else "🔴" if bias == "bearish" else "⚪"
         lines.append("")
-        lines.append(f"{bias_icon} <b>{sym}</b> — {align} · {conv} conviction")
+        lines.append(f"{bias_icon} <b>{sym}</b>{price_str} — {align} · {conv} conviction")
 
         # Per-TF scores
         score_parts = []
