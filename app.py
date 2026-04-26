@@ -108,8 +108,12 @@ def _tf_key_signals(tf, tf_data):
 
     fbd = tf_data.get("fbd_levels", [])
     fbo = tf_data.get("fbo_levels", [])
-    for r in fbd: signals.append(f"FBD {_price(r['level'])} ({r['source']})")
-    for r in fbo: signals.append(f"FBO {_price(r['level'])} ({r['source']})")
+    for r in fbd:
+        if isinstance(r, dict): signals.append(f"FBD {_price(r['level'])} ({r['source']})")
+        else: signals.append(f"FBD {_price(r)}")
+    for r in fbo:
+        if isinstance(r, dict): signals.append(f"FBO {_price(r['level'])} ({r['source']})")
+        else: signals.append(f"FBO {_price(r)}")
 
     return signals
 
@@ -183,10 +187,10 @@ def render_tf_card(tf, tf_data):
         fbd_levels = tf_data.get("fbd_levels", [])
         fbo_levels = tf_data.get("fbo_levels", [])
         if fbd_levels:
-            parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in fbd_levels)
+            parts = ", ".join(f"{_price(r['level'])} ({r['source']})" if isinstance(r, dict) else _price(r) for r in fbd_levels)
             st.success(f"FBD — failed to break below: {parts}")
         if fbo_levels:
-            parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in fbo_levels)
+            parts = ", ".join(f"{_price(r['level'])} ({r['source']})" if isinstance(r, dict) else _price(r) for r in fbo_levels)
             st.error(f"FBO — failed to break above: {parts}")
 
         # Key metrics
@@ -318,10 +322,10 @@ def render_snapshot(snapshot):
                     if isinstance(tf_map.get(tf), dict) and tf_map[tf].get("fbo_levels")
                 ]
                 for tf_label, levels in fbd_rows:
-                    parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in levels)
+                    parts = ", ".join(f"{_price(r['level'])} ({r['source']})" if isinstance(r, dict) else _price(r) for r in levels)
                     st.success(f"FBD ({tf_label}) — failed to break below: {parts}")
                 for tf_label, levels in fbo_rows:
-                    parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in levels)
+                    parts = ", ".join(f"{_price(r['level'])} ({r['source']})" if isinstance(r, dict) else _price(r) for r in levels)
                     st.error(f"FBO ({tf_label}) — failed to break above: {parts}")
 
                 st.divider()
