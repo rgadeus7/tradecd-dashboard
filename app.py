@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -454,6 +455,17 @@ with st.sidebar:
             st.session_state.analysis_symbols  = analysis_syms
             st.session_state.chat_messages     = []
             st.rerun()
+
+    st.divider()
+
+    # Telegram toggle
+    st.subheader("Telegram")
+    tg_default = os.getenv("TELEGRAM_ENABLED", "true").strip().lower() == "true"
+    tg_enabled = st.toggle("Send Telegram notifications", value=tg_default)
+    if tg_enabled != tg_default:
+        os.environ["TELEGRAM_ENABLED"] = "true" if tg_enabled else "false"
+        import tools.telegram as _tg
+        _tg.ENABLED = tg_enabled
 
     st.divider()
     if st.button("Clear Chat", use_container_width=True):
