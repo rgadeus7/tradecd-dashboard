@@ -238,6 +238,14 @@ def render_tf_card(tf, tf_data):
                 f"-1/8: {_price(mm.get('minus_18'))}  "
                 f"-2/8: {_price(mm.get('minus_28'))}"
             )
+            if mm.get("expanded"):
+                pzone = mm.get("prior_zone", "Overshoot")
+                p18   = mm.get("prior_plus_18")
+                p28   = mm.get("prior_plus_28")
+                st.warning(
+                    f"⚠ Murrey bands recently expanded — price was in {pzone} on prior frame  "
+                    f"(prior +1/8: {_price(p18)}  prior +2/8: {_price(p28)})"
+                )
 
         if overext and any(k != "flags" for k in overext):
             st.caption("Distance from MAs: " + "  |  ".join(

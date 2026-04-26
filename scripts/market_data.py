@@ -496,6 +496,22 @@ def build_tf_snapshot(tf, df):
     # ── Murrey Math levels ─────────────────────────────────────────────────────
     mm = _murrey_math(df)
     if mm:
+        # Detect recent band expansion: compare current increment to prior frame
+        mm_prior = _murrey_math(df.iloc[:-5]) if len(df) > 10 else None
+        if mm_prior:
+            cur_inc   = mm.get("increment", 0)
+            prior_inc = mm_prior.get("increment", 0)
+            if prior_inc and cur_inc > prior_inc * 1.05:
+                # Bands expanded — check if current price was above prior 8/8 or +1/8
+                close = float(df.iloc[-1]["close"])
+                prior_88  = mm_prior.get("eight_eight", 0)
+                prior_p18 = mm_prior.get("plus_18", 0)
+                if close >= prior_p18:
+                    mm["expanded"] = True
+                    mm["prior_zone"] = "Extreme Overshoot" if close >= mm_prior.get("plus_28", float("inf")) else "Overshoot"
+                    mm["prior_eight_eight"] = prior_88
+                    mm["prior_plus_18"]     = prior_p18
+                    mm["prior_plus_28"]     = mm_prior.get("plus_28")
         snap["murrey"] = mm
 
     # ── Sideways detection (weekly only) ──────────────────────────────────────

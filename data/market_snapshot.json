@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-26T20:01:46.795564+00:00",
+  "timestamp": "2026-04-26T21:28:38.146137+00:00",
   "symbols": {
     "SMH": {
       "15min": {
@@ -33,6 +33,24 @@
           "pct_from_ma200": 4.22,
           "pct_from_supertrend": 0.43,
           "flags": []
+        },
+        "murrey": {
+          "plus_28": 531.25,
+          "plus_18": 515.625,
+          "eight_eight": 500.0,
+          "seven_eight": 484.375,
+          "six_eight": 468.75,
+          "five_eight": 453.125,
+          "four_eight": 437.5,
+          "three_eight": 421.875,
+          "two_eight": 406.25,
+          "one_eight": 390.625,
+          "zero_eight": 375.0,
+          "minus_18": 359.375,
+          "minus_28": 343.75,
+          "increment": 15.625,
+          "zone": 0.0,
+          "zone_label": "Normal"
         },
         "bull_bear_score": 6,
         "bull_bear_breakdown": [
@@ -107,6 +125,24 @@
             "overextended_from_ma200"
           ]
         },
+        "murrey": {
+          "plus_28": 531.25,
+          "plus_18": 515.625,
+          "eight_eight": 500.0,
+          "seven_eight": 484.375,
+          "six_eight": 468.75,
+          "five_eight": 453.125,
+          "four_eight": 437.5,
+          "three_eight": 421.875,
+          "two_eight": 406.25,
+          "one_eight": 390.625,
+          "zero_eight": 375.0,
+          "minus_18": 359.375,
+          "minus_28": 343.75,
+          "increment": 15.625,
+          "zone": 0.0,
+          "zone_label": "Normal"
+        },
         "bull_bear_score": 10,
         "bull_bear_breakdown": [
           {
@@ -143,7 +179,7 @@
           }
         ],
         "reversal_score": 3,
-        "reversal_dir": "upside",
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
             "reason": "BB position high (84%)",
@@ -199,6 +235,24 @@
             "overextended_from_ma20",
             "overextended_from_supertrend"
           ]
+        },
+        "murrey": {
+          "plus_28": 562.5,
+          "plus_18": 531.25,
+          "eight_eight": 500.0,
+          "seven_eight": 468.75,
+          "six_eight": 437.5,
+          "five_eight": 406.25,
+          "four_eight": 375.0,
+          "three_eight": 343.75,
+          "two_eight": 312.5,
+          "one_eight": 281.25,
+          "zero_eight": 250.0,
+          "minus_18": 218.75,
+          "minus_28": 187.5,
+          "increment": 31.25,
+          "zone": 0.0,
+          "zone_label": "Normal"
         },
         "last_5_days": [
           {
@@ -268,7 +322,7 @@
           }
         ],
         "reversal_score": 5,
-        "reversal_dir": "upside",
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
             "reason": "BB position high (94%)",
@@ -329,6 +383,29 @@
             "overextended_from_supertrend",
             "above_bb_25sd"
           ]
+        },
+        "murrey": {
+          "plus_28": 625.0,
+          "plus_18": 562.5,
+          "eight_eight": 500.0,
+          "seven_eight": 437.5,
+          "six_eight": 375.0,
+          "five_eight": 312.5,
+          "four_eight": 250.0,
+          "three_eight": 187.5,
+          "two_eight": 125.0,
+          "one_eight": 62.5,
+          "zero_eight": 0.0,
+          "minus_18": -62.5,
+          "minus_28": -125.0,
+          "increment": 62.5,
+          "zone": 0.0,
+          "zone_label": "Normal",
+          "expanded": true,
+          "prior_zone": "Extreme Overshoot",
+          "prior_eight_eight": 375.0,
+          "prior_plus_18": 406.25,
+          "prior_plus_28": 437.5
         },
         "sideways": {
           "range_10w_pct": 29.71,
@@ -403,12 +480,17 @@
             "points": 1
           }
         ],
-        "reversal_score": 5,
-        "reversal_dir": "upside",
+        "reversal_score": 8,
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
-            "reason": "Wick above BB 3SD upper (507.54)",
+            "reason": "Close above BB 2.5SD (489.62)",
             "points": 2,
+            "side": "up"
+          },
+          {
+            "reason": "Murrey bands expanded \u2014 was Extreme Overshoot on prior frame (prior +1/8: 406.25)",
+            "points": 3,
             "side": "up"
           },
           {
@@ -459,6 +541,29 @@
             "overextended_from_supertrend",
             "above_bb_25sd"
           ]
+        },
+        "murrey": {
+          "plus_28": 625.0,
+          "plus_18": 562.5,
+          "eight_eight": 500.0,
+          "seven_eight": 437.5,
+          "six_eight": 375.0,
+          "five_eight": 312.5,
+          "four_eight": 250.0,
+          "three_eight": 187.5,
+          "two_eight": 125.0,
+          "one_eight": 62.5,
+          "zero_eight": 0.0,
+          "minus_18": -62.5,
+          "minus_28": -125.0,
+          "increment": 62.5,
+          "zone": 0.0,
+          "zone_label": "Normal",
+          "expanded": true,
+          "prior_zone": "Extreme Overshoot",
+          "prior_eight_eight": 375.0,
+          "prior_plus_18": 406.25,
+          "prior_plus_28": 437.5
         },
         "last_5_months": [
           {
@@ -547,12 +652,17 @@
             "points": 1
           }
         ],
-        "reversal_score": 4,
-        "reversal_dir": "upside",
+        "reversal_score": 7,
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
-            "reason": "Close above BB 2.5SD upper (504.85)",
+            "reason": "Close above BB 2.5SD (504.85)",
             "points": 2,
+            "side": "up"
+          },
+          {
+            "reason": "Murrey bands expanded \u2014 was Extreme Overshoot on prior frame (prior +1/8: 406.25)",
+            "points": 3,
             "side": "up"
           },
           {
@@ -562,7 +672,7 @@
           }
         ]
       },
-      "_fetched_at": "2026-04-26T20:00:12.821171+00:00",
+      "_fetched_at": "2026-04-26T21:27:35.128138+00:00",
       "summary": {
         "tf_alignment": "5/5 bullish",
         "conviction": "high",
@@ -576,582 +686,15 @@
         ],
         "bearish_tfs": [],
         "top_reversal_tf": "weekly",
-        "top_reversal_score": 5,
-        "top_reversal_dir": "upside",
-        "reversal_label": "medium",
+        "top_reversal_score": 8,
+        "top_reversal_dir": "too high",
+        "reversal_label": "high",
         "tf_scores": {
           "monthly": 7,
           "weekly": 10,
           "daily": 10,
           "2H": 10,
           "15min": 6
-        }
-      }
-    },
-    "QQQ": {
-      "15min": {
-        "close": 663.46,
-        "current_high": 663.7,
-        "current_low": 663.46,
-        "ma8": 663.5038,
-        "ma20": 663.629,
-        "ma50": 662.1936,
-        "ma200": 655.065,
-        "rsi": 56.5212,
-        "rsi_ma": 57.9829,
-        "rsi_above_ma": false,
-        "supertrend": 662.4971,
-        "supertrend_dir": "bullish",
-        "bb": {
-          "basis": 663.629,
-          "upper_2": 664.0411,
-          "lower_2": 663.2169,
-          "upper_25": 664.1442,
-          "lower_25": 663.1138,
-          "upper_3": 664.2472,
-          "lower_3": 663.0108,
-          "width_pct": 0.1242,
-          "position": 29.4966
-        },
-        "overextension": {
-          "pct_from_ma8": -0.01,
-          "pct_from_ma20": -0.03,
-          "pct_from_ma50": 0.19,
-          "pct_from_ma200": 1.28,
-          "pct_from_supertrend": 0.15,
-          "flags": []
-        },
-        "bull_bear_score": 2,
-        "bull_bear_breakdown": [
-          {
-            "reason": "MA8 < MA20",
-            "points": -1
-          },
-          {
-            "reason": "MA20 > MA50",
-            "points": 1
-          },
-          {
-            "reason": "MA50 > MA200",
-            "points": 1
-          },
-          {
-            "reason": "Price > MA200",
-            "points": 1
-          },
-          {
-            "reason": "SuperTrend bullish",
-            "points": 2
-          },
-          {
-            "reason": "RSI > 50 (56.5)",
-            "points": 1
-          },
-          {
-            "reason": "RSI < RSI MA (56.5 < 58.0)",
-            "points": -2
-          },
-          {
-            "reason": "BB position lower half (29%)",
-            "points": -1
-          }
-        ],
-        "reversal_score": 0,
-        "reversal_dir": "none",
-        "reversal_breakdown": []
-      },
-      "2H": {
-        "close": 663.46,
-        "current_high": 663.75,
-        "current_low": 663.43,
-        "ma8": 661.4612,
-        "ma20": 656.7895,
-        "ma50": 650.8036,
-        "ma200": 608.4179,
-        "rsi": 69.3065,
-        "rsi_ma": 67.5145,
-        "rsi_above_ma": true,
-        "supertrend": 653.5136,
-        "supertrend_dir": "bullish",
-        "bb": {
-          "basis": 656.7895,
-          "upper_2": 665.8509,
-          "lower_2": 647.7281,
-          "upper_25": 668.1162,
-          "lower_25": 645.4628,
-          "upper_3": 670.3816,
-          "lower_3": 643.1974,
-          "width_pct": 2.7593,
-          "position": 86.8073
-        },
-        "overextension": {
-          "pct_from_ma8": 0.3,
-          "pct_from_ma20": 1.02,
-          "pct_from_ma50": 1.94,
-          "pct_from_ma200": 9.05,
-          "pct_from_supertrend": 1.52,
-          "flags": []
-        },
-        "bull_bear_score": 10,
-        "bull_bear_breakdown": [
-          {
-            "reason": "MA8 > MA20",
-            "points": 1
-          },
-          {
-            "reason": "MA20 > MA50",
-            "points": 1
-          },
-          {
-            "reason": "MA50 > MA200",
-            "points": 1
-          },
-          {
-            "reason": "Price > MA200",
-            "points": 1
-          },
-          {
-            "reason": "SuperTrend bullish",
-            "points": 2
-          },
-          {
-            "reason": "RSI > 50 (69.3)",
-            "points": 1
-          },
-          {
-            "reason": "RSI > RSI MA (69.3 > 67.5)",
-            "points": 2
-          },
-          {
-            "reason": "BB position upper half (87%)",
-            "points": 1
-          }
-        ],
-        "reversal_score": 1,
-        "reversal_dir": "upside",
-        "reversal_breakdown": [
-          {
-            "reason": "BB position high (87%)",
-            "points": 1,
-            "side": "up"
-          }
-        ]
-      },
-      "daily": {
-        "close": 663.46,
-        "current_high": 664.51,
-        "current_low": 651.9,
-        "ma8": 649.6375,
-        "ma20": 616.4055,
-        "ma50": 606.8014,
-        "ma200": 601.5874,
-        "rsi": 78.0314,
-        "rsi_ma": 72.0715,
-        "rsi_above_ma": true,
-        "supertrend": 623.8937,
-        "supertrend_dir": "bullish",
-        "atr14": 11.7838,
-        "bb": {
-          "basis": 616.4055,
-          "upper_2": 682.6583,
-          "lower_2": 550.1527,
-          "upper_25": 699.2215,
-          "lower_25": 533.5895,
-          "upper_3": 715.7847,
-          "lower_3": 517.0263,
-          "width_pct": 21.4965,
-          "position": 85.5113
-        },
-        "overextension": {
-          "pct_from_ma8": 2.13,
-          "pct_from_ma20": 7.63,
-          "pct_from_ma50": 9.34,
-          "pct_from_ma200": 10.28,
-          "pct_from_supertrend": 6.34,
-          "flags": [
-            "overextended_from_ma20",
-            "overextended_from_supertrend"
-          ]
-        },
-        "last_5_days": [
-          {
-            "date": "2026-04-20",
-            "high": 649.34,
-            "low": 642.52,
-            "close": 647.97
-          },
-          {
-            "date": "2026-04-21",
-            "high": 650.59,
-            "low": 642.21,
-            "close": 647.49
-          },
-          {
-            "date": "2026-04-22",
-            "high": 656.34,
-            "low": 647.51,
-            "close": 655.45
-          },
-          {
-            "date": "2026-04-23",
-            "high": 656.92,
-            "low": 645.52,
-            "close": 655.16
-          },
-          {
-            "date": "2026-04-24",
-            "high": 664.51,
-            "low": 651.9,
-            "close": 663.46
-          }
-        ],
-        "bull_bear_score": 10,
-        "bull_bear_breakdown": [
-          {
-            "reason": "MA8 > MA20",
-            "points": 1
-          },
-          {
-            "reason": "MA20 > MA50",
-            "points": 1
-          },
-          {
-            "reason": "MA50 > MA200",
-            "points": 1
-          },
-          {
-            "reason": "Price > MA200",
-            "points": 1
-          },
-          {
-            "reason": "SuperTrend bullish",
-            "points": 2
-          },
-          {
-            "reason": "RSI > 50 (78.0)",
-            "points": 1
-          },
-          {
-            "reason": "RSI > RSI MA (78.0 > 72.1)",
-            "points": 2
-          },
-          {
-            "reason": "BB position upper half (86%)",
-            "points": 1
-          }
-        ],
-        "reversal_score": 2,
-        "reversal_dir": "upside",
-        "reversal_breakdown": [
-          {
-            "reason": "BB position high (86%)",
-            "points": 1,
-            "side": "up"
-          },
-          {
-            "reason": "RSI overbought (78.0)",
-            "points": 1,
-            "side": "up"
-          }
-        ]
-      },
-      "weekly": {
-        "close": 663.46,
-        "current_high": 664.51,
-        "current_low": 642.21,
-        "ma8": 606.1513,
-        "ma20": 611.592,
-        "ma50": 589.0892,
-        "ma200": 444.2273,
-        "rsi": 66.4666,
-        "rsi_ma": 54.9967,
-        "rsi_above_ma": true,
-        "supertrend": 571.1932,
-        "supertrend_dir": "bullish",
-        "bb": {
-          "basis": 611.592,
-          "upper_2": 656.0975,
-          "lower_2": 567.0865,
-          "upper_25": 667.2239,
-          "lower_25": 555.9601,
-          "upper_3": 678.3503,
-          "lower_3": 544.8337,
-          "width_pct": 14.554,
-          "position": 100.0
-        },
-        "overextension": {
-          "pct_from_ma8": 9.45,
-          "pct_from_ma20": 8.48,
-          "pct_from_ma50": 12.62,
-          "pct_from_ma200": 49.35,
-          "pct_from_supertrend": 16.15,
-          "flags": [
-            "overextended_from_ma200",
-            "overextended_from_ma50",
-            "overextended_from_ma20",
-            "overextended_from_supertrend"
-          ]
-        },
-        "sideways": {
-          "range_10w_pct": 16.43,
-          "range_15w_pct": 16.43,
-          "consolidating_10w": false,
-          "consolidating_15w": false
-        },
-        "last_5_weeks": [
-          {
-            "date": "2026-03-27",
-            "high": 597.0,
-            "low": 560.0,
-            "close": 560.13
-          },
-          {
-            "date": "2026-04-02",
-            "high": 587.74,
-            "low": 555.49,
-            "close": 584.8
-          },
-          {
-            "date": "2026-04-10",
-            "high": 613.67,
-            "low": 578.4,
-            "close": 612.49
-          },
-          {
-            "date": "2026-04-17",
-            "high": 650.0,
-            "low": 602.68,
-            "close": 648.97
-          },
-          {
-            "date": "2026-04-24",
-            "high": 664.51,
-            "low": 642.21,
-            "close": 663.46
-          }
-        ],
-        "bull_bear_score": 8,
-        "bull_bear_breakdown": [
-          {
-            "reason": "MA8 < MA20",
-            "points": -1
-          },
-          {
-            "reason": "MA20 > MA50",
-            "points": 1
-          },
-          {
-            "reason": "MA50 > MA200",
-            "points": 1
-          },
-          {
-            "reason": "Price > MA200",
-            "points": 1
-          },
-          {
-            "reason": "SuperTrend bullish",
-            "points": 2
-          },
-          {
-            "reason": "RSI > 50 (66.5)",
-            "points": 1
-          },
-          {
-            "reason": "RSI > RSI MA (66.5 > 55.0)",
-            "points": 2
-          },
-          {
-            "reason": "BB position upper half (100%)",
-            "points": 1
-          }
-        ],
-        "reversal_score": 3,
-        "reversal_dir": "upside",
-        "reversal_breakdown": [
-          {
-            "reason": "Wick above BB 2SD upper (656.10)",
-            "points": 1,
-            "side": "up"
-          },
-          {
-            "reason": "Overextended above MA200 (+49.4%)",
-            "points": 1,
-            "side": "up"
-          },
-          {
-            "reason": "Overextended above MA50 (+12.6%)",
-            "points": 1,
-            "side": "up"
-          }
-        ]
-      },
-      "monthly": {
-        "close": 663.46,
-        "current_high": 664.51,
-        "current_low": 571.66,
-        "ma8": 616.305,
-        "ma20": 555.2245,
-        "rsi": 72.8393,
-        "rsi_ma": 71.2206,
-        "rsi_above_ma": true,
-        "supertrend": 495.1721,
-        "supertrend_dir": "bullish",
-        "bb": {
-          "basis": 555.2245,
-          "upper_2": 672.878,
-          "lower_2": 437.571,
-          "upper_25": 702.2914,
-          "lower_25": 408.1576,
-          "upper_3": 731.7048,
-          "lower_3": 378.7442,
-          "width_pct": 42.3805,
-          "position": 95.9976
-        },
-        "overextension": {
-          "pct_from_ma8": 7.65,
-          "pct_from_ma20": 19.49,
-          "pct_from_supertrend": 33.99,
-          "flags": [
-            "overextended_from_ma20",
-            "overextended_from_supertrend"
-          ]
-        },
-        "last_5_months": [
-          {
-            "date": "2025-12-31",
-            "high": 629.21,
-            "low": 600.28,
-            "close": 614.26
-          },
-          {
-            "date": "2026-01-30",
-            "high": 637.61,
-            "low": 605.46,
-            "close": 620.24
-          },
-          {
-            "date": "2026-02-27",
-            "high": 630.53,
-            "low": 587.44,
-            "close": 605.38
-          },
-          {
-            "date": "2026-03-31",
-            "high": 613.47,
-            "low": 555.49,
-            "close": 580.19
-          },
-          {
-            "date": "2026-04-24",
-            "high": 664.51,
-            "low": 571.66,
-            "close": 663.46
-          }
-        ],
-        "last_5_quarters": [
-          {
-            "quarter": "2025Q2",
-            "high": 552.8,
-            "low": 396.0,
-            "close": 551.56
-          },
-          {
-            "quarter": "2025Q3",
-            "high": 602.98,
-            "low": 544.54,
-            "close": 598.75
-          },
-          {
-            "quarter": "2025Q4",
-            "high": 638.41,
-            "low": 580.27,
-            "close": 614.26
-          },
-          {
-            "quarter": "2026Q1",
-            "high": 637.61,
-            "low": 555.49,
-            "close": 580.19
-          },
-          {
-            "quarter": "2026Q2",
-            "high": 664.51,
-            "low": 571.66,
-            "close": 663.46
-          }
-        ],
-        "fbd_levels": [
-          580.27,
-          587.44,
-          600.28,
-          605.46
-        ],
-        "bull_bear_score": 7,
-        "bull_bear_breakdown": [
-          {
-            "reason": "MA8 > MA20",
-            "points": 1
-          },
-          {
-            "reason": "SuperTrend bullish",
-            "points": 2
-          },
-          {
-            "reason": "RSI > 50 (72.8)",
-            "points": 1
-          },
-          {
-            "reason": "RSI > RSI MA (72.8 > 71.2)",
-            "points": 2
-          },
-          {
-            "reason": "BB position upper half (96%)",
-            "points": 1
-          }
-        ],
-        "reversal_score": 4,
-        "reversal_dir": "downside",
-        "reversal_breakdown": [
-          {
-            "reason": "BB position high (96%)",
-            "points": 1,
-            "side": "up"
-          },
-          {
-            "reason": "RSI overbought (72.8)",
-            "points": 1,
-            "side": "up"
-          },
-          {
-            "reason": "FBD at 580.27, 587.44, 600.28, 605.46",
-            "points": 4,
-            "side": "dn"
-          }
-        ]
-      },
-      "_fetched_at": "2026-04-26T20:01:21.157847+00:00",
-      "summary": {
-        "tf_alignment": "5/5 bullish",
-        "conviction": "high",
-        "overall_bias": "bullish",
-        "bullish_tfs": [
-          "monthly",
-          "weekly",
-          "daily",
-          "2H",
-          "15min"
-        ],
-        "bearish_tfs": [],
-        "top_reversal_tf": "monthly",
-        "top_reversal_score": 4,
-        "top_reversal_dir": "downside",
-        "reversal_label": "medium",
-        "tf_scores": {
-          "monthly": 7,
-          "weekly": 8,
-          "daily": 10,
-          "2H": 10,
-          "15min": 2
         }
       }
     },
@@ -1187,6 +730,24 @@
           "pct_from_ma200": 1.36,
           "pct_from_supertrend": 0.3,
           "flags": []
+        },
+        "murrey": {
+          "plus_28": 359.375,
+          "plus_18": 351.5625,
+          "eight_eight": 343.75,
+          "seven_eight": 335.9375,
+          "six_eight": 328.125,
+          "five_eight": 320.3125,
+          "four_eight": 312.5,
+          "three_eight": 304.6875,
+          "two_eight": 296.875,
+          "one_eight": 289.0625,
+          "zero_eight": 281.25,
+          "minus_18": 273.4375,
+          "minus_28": 265.625,
+          "increment": 7.8125,
+          "zone": 0.0,
+          "zone_label": "Normal"
         },
         "bull_bear_score": 2,
         "bull_bear_breakdown": [
@@ -1259,6 +820,24 @@
           "pct_from_supertrend": 2.37,
           "flags": []
         },
+        "murrey": {
+          "plus_28": 359.375,
+          "plus_18": 351.5625,
+          "eight_eight": 343.75,
+          "seven_eight": 335.9375,
+          "six_eight": 328.125,
+          "five_eight": 320.3125,
+          "four_eight": 312.5,
+          "three_eight": 304.6875,
+          "two_eight": 296.875,
+          "one_eight": 289.0625,
+          "zero_eight": 281.25,
+          "minus_18": 273.4375,
+          "minus_28": 265.625,
+          "increment": 7.8125,
+          "zone": 0.0,
+          "zone_label": "Normal"
+        },
         "bull_bear_score": 10,
         "bull_bear_breakdown": [
           {
@@ -1295,7 +874,7 @@
           }
         ],
         "reversal_score": 1,
-        "reversal_dir": "upside",
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
             "reason": "BB position high (89%)",
@@ -1342,6 +921,24 @@
             "overextended_from_supertrend"
           ]
         },
+        "murrey": {
+          "plus_28": 437.5,
+          "plus_18": 406.25,
+          "eight_eight": 375.0,
+          "seven_eight": 343.75,
+          "six_eight": 312.5,
+          "five_eight": 281.25,
+          "four_eight": 250.0,
+          "three_eight": 218.75,
+          "two_eight": 187.5,
+          "one_eight": 156.25,
+          "zero_eight": 125.0,
+          "minus_18": 93.75,
+          "minus_28": 62.5,
+          "increment": 31.25,
+          "zone": 0.0,
+          "zone_label": "Normal"
+        },
         "last_5_days": [
           {
             "date": "2026-04-20",
@@ -1373,9 +970,6 @@
             "low": 335.39,
             "close": 343.59
           }
-        ],
-        "fbd_levels": [
-          336.26
         ],
         "bull_bear_score": 10,
         "bull_bear_breakdown": [
@@ -1413,7 +1007,7 @@
           }
         ],
         "reversal_score": 3,
-        "reversal_dir": "upside",
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
             "reason": "RSI overbought (70.7)",
@@ -1429,11 +1023,6 @@
             "reason": "Overextended above MA50 (+11.0%)",
             "points": 1,
             "side": "up"
-          },
-          {
-            "reason": "FBD at 336.26",
-            "points": 2,
-            "side": "dn"
           }
         ]
       },
@@ -1472,6 +1061,24 @@
             "overextended_from_ma50",
             "overextended_from_ma20"
           ]
+        },
+        "murrey": {
+          "plus_28": 437.5,
+          "plus_18": 406.25,
+          "eight_eight": 375.0,
+          "seven_eight": 343.75,
+          "six_eight": 312.5,
+          "five_eight": 281.25,
+          "four_eight": 250.0,
+          "three_eight": 218.75,
+          "two_eight": 187.5,
+          "one_eight": 156.25,
+          "zero_eight": 125.0,
+          "minus_18": 93.75,
+          "minus_28": 62.5,
+          "increment": 31.25,
+          "zone": 0.0,
+          "zone_label": "Normal"
         },
         "sideways": {
           "range_10w_pct": 21.32,
@@ -1547,7 +1154,7 @@
           }
         ],
         "reversal_score": 3,
-        "reversal_dir": "upside",
+        "reversal_dir": "too high",
         "reversal_breakdown": [
           {
             "reason": "BB position high (92%)",
@@ -1596,6 +1203,24 @@
             "overextended_from_ma20",
             "overextended_from_supertrend"
           ]
+        },
+        "murrey": {
+          "plus_28": 437.5,
+          "plus_18": 406.25,
+          "eight_eight": 375.0,
+          "seven_eight": 343.75,
+          "six_eight": 312.5,
+          "five_eight": 281.25,
+          "four_eight": 250.0,
+          "three_eight": 218.75,
+          "two_eight": 187.5,
+          "one_eight": 156.25,
+          "zero_eight": 125.0,
+          "minus_18": 93.75,
+          "minus_28": 62.5,
+          "increment": 31.25,
+          "zone": 0.0,
+          "zone_label": "Normal"
         },
         "last_5_months": [
           {
@@ -1662,9 +1287,14 @@
           }
         ],
         "fbd_levels": [
-          295.7,
-          296.25,
-          310.33
+          {
+            "level": 295.7,
+            "source": "Monthly"
+          },
+          {
+            "level": 310.33,
+            "source": "Monthly"
+          }
         ],
         "bull_bear_score": 7,
         "bull_bear_breakdown": [
@@ -1690,7 +1320,7 @@
           }
         ],
         "reversal_score": 4,
-        "reversal_dir": "downside",
+        "reversal_dir": "too low",
         "reversal_breakdown": [
           {
             "reason": "BB position high (92%)",
@@ -1703,13 +1333,13 @@
             "side": "up"
           },
           {
-            "reason": "FBD at 295.70, 296.25, 310.33",
+            "reason": "FBD at 295.70 (Monthly), 310.33 (Monthly)",
             "points": 4,
             "side": "dn"
           }
         ]
       },
-      "_fetched_at": "2026-04-26T20:01:46.794903+00:00",
+      "_fetched_at": "2026-04-26T21:28:38.145125+00:00",
       "summary": {
         "tf_alignment": "5/5 bullish",
         "conviction": "high",
@@ -1724,7 +1354,7 @@
         "bearish_tfs": [],
         "top_reversal_tf": "monthly",
         "top_reversal_score": 4,
-        "top_reversal_dir": "downside",
+        "top_reversal_dir": "too low",
         "reversal_label": "medium",
         "tf_scores": {
           "monthly": 7,

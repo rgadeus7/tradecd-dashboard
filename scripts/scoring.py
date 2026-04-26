@@ -127,6 +127,13 @@ def _reversal(tf_data: dict) -> tuple[int, str, list]:
     if mzone <= -2:   _add("dn", 3, f"Murrey {mlbl} (below -2/8 {mm.get('minus_28', 0):.2f})")
     elif mzone <= -1: _add("dn", 2, f"Murrey {mlbl} (below -1/8 {mm.get('minus_18', 0):.2f})")
 
+    # Murrey band recently expanded — price was in overshoot before bands reset
+    if mm.get("expanded"):
+        pzone = mm.get("prior_zone", "Overshoot")
+        p18   = mm.get("prior_plus_18", 0)
+        pts   = 3 if pzone == "Extreme Overshoot" else 2
+        _add("up", pts, f"Murrey bands expanded — was {pzone} on prior frame (prior +1/8: {p18:.2f})")
+
     # RSI extremes
     if rsi is not None:
         if rsi >= 80:    _add("up", 2, f"RSI extremely overbought ({rsi:.1f})")
