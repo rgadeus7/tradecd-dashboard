@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Data files (regenerated from IBKR)
+trading.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db

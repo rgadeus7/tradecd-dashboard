@@ -1,0 +1,418 @@
+"""
+Market data fetcher — ES futures + SPY across 5 timeframes.
+
+Indicators per timeframe:
+  15min / 2H / Daily / Weekly : MA20, MA50, MA200, SuperTrend(10,3), RSI14
+  Monthly                      : MA20, SuperTrend, RSI14
+  Daily only                   : ATR14
+
+Structural levels:
+  Daily   → last 5 days  (date, high, low, close)
+  Weekly  → last 5 weeks
+  Monthly → last 5 months + last 5 quarters (derived from monthly bars)
+
+Output: data/market_snapshot.json  (always overwritten — current state only)
+
+Usage:
+    python scripts/market_data.py
+    python scripts/market_data.py --port 4001
+"""
+
+import io
+import json
+import random
+import sys
+from datetime import date, datetime, timezone
+from pathlib import Path
+
+# Ensure UTF-8 output on Windows console
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+import numpy as np
+import pandas as pd
+from ib_insync import IB, Future, Index, Stock, util
+
+# ── Config ─────────────────────────────────────────────────────────────────────
+IBKR_HOST = "127.0.0.1"
+IBKR_TIMEOUT = 5
+CLIENT_ID_RANGE = (200, 899)
+
+DEFAULT_SYMBOLS = ["ES", "SPY"]
+
+FUTURES_SYMBOLS = frozenset({
+    "ES", "MES", "NQ", "MNQ", "RTY", "M2K", "YM", "MYM",
+    "CL", "NG", "GC", "SI", "HG", "ZB", "ZN", "6E", "6B", "6J",
+})
+FUTURES_EXCHANGE = {
+    "ES": "CME", "MES": "CME", "NQ": "CME", "MNQ": "CME",
+    "RTY": "CME", "M2K": "CME", "YM": "CBOT", "MYM": "CBOT",
+    "CL": "NYMEX", "NG": "NYMEX", "GC": "COMEX", "SI": "COMEX",
+    "HG": "COMEX", "ZB": "CBOT", "ZN": "CBOT",
+    "6E": "CME", "6B": "CME", "6J": "CME",
+}
+INDEX_SYMBOLS = frozenset({"SPX", "NDX", "RUT", "VIX", "DJX"})
+INDEX_EXCHANGE = {"SPX": "CBOE", "NDX": "NASDAQ", "RUT": "ICE",
+                  "VIX": "CBOE", "DJX": "CBOE"}
+
+OUTPUT_PATH = Path(__file__).parent.parent / "data" / "market_snapshot.json"
+OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# barSize, duration, MAs to include
+TIMEFRAMES = {
+    "15min":   ("15 mins", "1 M",  ["ma20", "ma50", "ma200"]),
+    "2H":      ("2 hours", "3 M",  ["ma20", "ma50", "ma200"]),
+    "daily":   ("1 day",   "1 Y",  ["ma20", "ma50", "ma200"]),
+    "weekly":  ("1 week",  "5 Y",  ["ma20", "ma50", "ma200"]),
+    "monthly": ("1 month", "5 Y",  ["ma20"]),
+}
+
+
+# ── IBKR connection ────────────────────────────────────────────────────────────
+def connect_ibkr(force_port=None):
+    util.startLoop()
+    ib = IB()
+    client_id = random.randint(*CLIENT_ID_RANGE)
+    ports = [(force_port, "forced")] if force_port else [
+        (4001, "Live Gateway"), (4002, "Paper Gateway"),
+        (7496, "Live TWS"),     (7497, "Paper TWS"),
+    ]
+    for port, label in ports:
+        try:
+            ib.connect(IBKR_HOST, port, clientId=client_id, timeout=IBKR_TIMEOUT)
+            print(f"Connected via {label}:{port} (clientId={client_id})")
+            return ib
+        except Exception as e:
+            print(f"  {label}:{port} — {e}")
+    raise RuntimeError("Could not connect to IBKR on any port.")
+
+
+def resolve_contract(ib, sym):
+    """Return (contract, what_to_show) for any symbol."""
+    sym = sym.upper()
+
+    if sym in FUTURES_SYMBOLS:
+        exchange = FUTURES_EXCHANGE.get(sym, "CME")
+        today    = date.today().strftime("%Y%m%d")
+        details  = ib.reqContractDetails(Future(sym, exchange=exchange, currency="USD"))
+        front    = sorted(
+            (d.contract for d in details
+             if d.contract.lastTradeDateOrContractMonth[:8] >= today),
+            key=lambda c: c.lastTradeDateOrContractMonth
+        )[0]
+        ib.qualifyContracts(front)
+        print(f"  {sym} -> futures front month: {front.localSymbol}")
+        return front, "TRADES"
+
+    if sym in INDEX_SYMBOLS:
+        exchange = INDEX_EXCHANGE.get(sym, "CBOE")
+        contract = Index(sym, exchange, "USD")
+        ib.qualifyContracts(contract)
+        print(f"  {sym} -> index ({exchange})")
+        return contract, "MIDPOINT"
+
+    # Default: stock/ETF
+    contract = Stock(sym, "SMART", "USD")
+    ib.qualifyContracts(contract)
+    print(f"  {sym} -> stock/ETF")
+    return contract, "TRADES"
+
+
+# ── Bar fetching ───────────────────────────────────────────────────────────────
+def fetch_bars(ib, contract, bar_size, duration, what="TRADES"):
+    bars = ib.reqHistoricalData(
+        contract,
+        endDateTime="",
+        durationStr=duration,
+        barSizeSetting=bar_size,
+        whatToShow=what,
+        useRTH=False,
+        keepUpToDate=False,
+    )
+    if not bars:
+        return pd.DataFrame()
+
+    rows = []
+    for b in bars:
+        # b.date is datetime for intraday, date for daily+
+        dt = b.date if isinstance(b.date, datetime) else datetime(b.date.year, b.date.month, b.date.day)
+        rows.append({"date": dt, "open": b.open, "high": b.high,
+                     "low": b.low, "close": b.close, "volume": b.volume})
+
+    df = pd.DataFrame(rows).set_index("date").sort_index()
+    return df
+
+
+# ── Indicators ─────────────────────────────────────────────────────────────────
+def _atr(df, period=14):
+    h, l, c = df["high"], df["low"], df["close"]
+    tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
+    return tr.ewm(com=period - 1, min_periods=period).mean()
+
+
+def _rsi(series, period=14):
+    delta = series.diff()
+    gain = delta.clip(lower=0).ewm(com=period - 1, min_periods=period).mean()
+    loss = (-delta.clip(upper=0)).ewm(com=period - 1, min_periods=period).mean()
+    return 100 - (100 / (1 + gain / loss))
+
+
+def _supertrend(df, period=10, mult=3.0):
+    atr = _atr(df, period)
+    hl2 = (df["high"] + df["low"]) / 2
+    upper = hl2 + mult * atr
+    lower = hl2 - mult * atr
+
+    st  = [np.nan] * len(df)
+    dir_ = [0] * len(df)
+
+    closes = df["close"].values
+    up = upper.values
+    lo = lower.values
+
+    for i in range(period, len(df)):
+        if i == period:
+            st[i]   = lo[i]
+            dir_[i] = 1
+            continue
+
+        if dir_[i - 1] == 1:
+            new_st = max(lo[i], st[i - 1])
+            if closes[i] < new_st:
+                st[i], dir_[i] = up[i], -1
+            else:
+                st[i], dir_[i] = new_st, 1
+        else:
+            new_st = min(up[i], st[i - 1])
+            if closes[i] > new_st:
+                st[i], dir_[i] = lo[i], 1
+            else:
+                st[i], dir_[i] = new_st, -1
+
+    return pd.Series(st, index=df.index), pd.Series(dir_, index=df.index)
+
+
+def add_indicators(df, mas, include_atr=False):
+    df = df.copy()
+    close = df["close"]
+
+    for ma in mas:
+        period = int(ma.replace("ma", ""))
+        df[ma] = close.rolling(period).mean()
+
+    df["rsi"] = _rsi(close)
+    df["supertrend"], df["supertrend_dir"] = _supertrend(df)
+
+    if include_atr:
+        df["atr14"] = _atr(df, 14)
+
+    return df
+
+
+# ── Structural levels ──────────────────────────────────────────────────────────
+def _bar_records(df, n=5):
+    subset = df.iloc[-n:]
+    return [
+        {
+            "date":  str(idx.date()) if hasattr(idx, "date") else str(idx)[:10],
+            "high":  round(float(row["high"]),  2),
+            "low":   round(float(row["low"]),   2),
+            "close": round(float(row["close"]), 2),
+        }
+        for idx, row in subset.iterrows()
+    ]
+
+
+def _quarterly(monthly_df, n=5):
+    df = monthly_df.copy()
+    df.index = pd.to_datetime(df.index)
+    df["q"] = df.index.to_period("Q")
+    grouped = df.groupby("q").agg(high=("high", "max"), low=("low", "min"), close=("close", "last"))
+    return [
+        {
+            "quarter": str(q),
+            "high":    round(float(r["high"]),  2),
+            "low":     round(float(r["low"]),   2),
+            "close":   round(float(r["close"]), 2),
+        }
+        for q, r in grouped.tail(n).iterrows()
+    ]
+
+
+# ── Snapshot builder ───────────────────────────────────────────────────────────
+def _v(val):
+    """Round float, return None if nan/missing."""
+    try:
+        f = float(val)
+        return None if np.isnan(f) else round(f, 4)
+    except (TypeError, ValueError):
+        return None
+
+
+def _pct_from(close, level):
+    """% distance of close from a level. Positive = above, negative = below."""
+    try:
+        f = float(level)
+        if np.isnan(f) or f == 0:
+            return None
+        return round((close - f) / f * 100, 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _sideways(df, weeks):
+    """Range of last N weekly bars as % of current close. Low % = consolidation."""
+    subset = df.iloc[-weeks:]
+    if subset.empty:
+        return None
+    rng = subset["high"].max() - subset["low"].min()
+    close = float(df.iloc[-1]["close"])
+    return round(rng / close * 100, 2) if close else None
+
+
+def build_tf_snapshot(tf, df):
+    _, _, mas = TIMEFRAMES[tf]
+    include_atr = (tf == "daily")
+
+    df = add_indicators(df, mas, include_atr)
+    last = df.iloc[-1]
+    close = float(last["close"])
+
+    snap = {"close": _v(close)}
+
+    for ma in mas:
+        snap[ma] = _v(last.get(ma))
+
+    snap["rsi"]            = _v(last.get("rsi"))
+    snap["supertrend"]     = _v(last.get("supertrend"))
+    snap["supertrend_dir"] = (
+        "bullish" if last.get("supertrend_dir") == 1
+        else "bearish" if last.get("supertrend_dir") == -1
+        else None
+    )
+
+    if include_atr:
+        snap["atr14"] = _v(last.get("atr14"))
+
+    # ── Overextension metrics ──────────────────────────────────────────────────
+    overext = {}
+    for ma in mas:
+        val = last.get(ma)
+        pct = _pct_from(close, val)
+        if pct is not None:
+            overext[f"pct_from_{ma}"] = pct
+    st_pct = _pct_from(close, last.get("supertrend"))
+    if st_pct is not None:
+        overext["pct_from_supertrend"] = st_pct
+
+    # Soft flags — LLM gets both raw % and flag for emphasis
+    flags = []
+    if overext.get("pct_from_ma200") is not None and abs(overext["pct_from_ma200"]) > 15:
+        flags.append("overextended_from_ma200")
+    if overext.get("pct_from_ma50") is not None and abs(overext["pct_from_ma50"]) > 10:
+        flags.append("overextended_from_ma50")
+    if overext.get("pct_from_ma20") is not None and abs(overext["pct_from_ma20"]) > 7:
+        flags.append("overextended_from_ma20")
+    if overext.get("pct_from_supertrend") is not None and abs(overext["pct_from_supertrend"]) > 5:
+        flags.append("overextended_from_supertrend")
+
+    if overext:
+        snap["overextension"] = {**overext, "flags": flags}
+
+    # ── Sideways detection (weekly only) ──────────────────────────────────────
+    if tf == "weekly":
+        r10 = _sideways(df, 10)
+        r15 = _sideways(df, 15)
+        sideways = {
+            "range_10w_pct": r10,
+            "range_15w_pct": r15,
+            "consolidating_10w": r10 is not None and r10 < 5,
+            "consolidating_15w": r15 is not None and r15 < 6,
+        }
+        snap["sideways"] = {k: v for k, v in sideways.items() if v is not None}
+
+    # ── Structural levels ──────────────────────────────────────────────────────
+    if tf == "daily":
+        snap["last_5_days"]     = _bar_records(df, 5)
+    elif tf == "weekly":
+        snap["last_5_weeks"]    = _bar_records(df, 5)
+    elif tf == "monthly":
+        snap["last_5_months"]   = _bar_records(df, 5)
+        snap["last_5_quarters"] = _quarterly(df, 5)
+
+    # Drop None values
+    return {k: v for k, v in snap.items() if v is not None}
+
+
+# ── Main ───────────────────────────────────────────────────────────────────────
+def fetch_all(symbols=None, force_port=None):
+    """
+    Fetch market data for given symbols and save snapshot.
+    symbols: list of tickers e.g. ["ES", "SPY", "QQQ", "SMH"]
+             Defaults to DEFAULT_SYMBOLS if not provided.
+    """
+    if not symbols:
+        symbols = DEFAULT_SYMBOLS
+    symbols = [s.upper() for s in symbols]
+
+    ib = connect_ibkr(force_port)
+    ib.reqMarketDataType(2)
+
+    try:
+        result = {}
+
+        for sym in symbols:
+            print(f"\n-- {sym} ----------------------------------")
+            try:
+                contract, what = resolve_contract(ib, sym)
+            except Exception as e:
+                print(f"  Could not resolve contract for {sym}: {e}")
+                continue
+
+            sym_snap = {}
+            for tf, (bar_size, duration, _) in TIMEFRAMES.items():
+                print(f"  {tf}: {bar_size} x {duration}", end=" ... ", flush=True)
+                try:
+                    df = fetch_bars(ib, contract, bar_size, duration, what)
+                    if df.empty:
+                        print("no data")
+                        continue
+                    print(f"{len(df)} bars")
+                    sym_snap[tf] = build_tf_snapshot(tf, df)
+                except Exception as e:
+                    print(f"ERROR -- {e}")
+                    sym_snap[tf] = {}
+
+            sym_snap["_fetched_at"] = datetime.now(timezone.utc).isoformat()
+            result[sym] = sym_snap
+
+        # Merge with existing snapshot — only update symbols we just fetched
+        existing = {}
+        if OUTPUT_PATH.exists():
+            with open(OUTPUT_PATH) as f:
+                existing = json.load(f)
+
+        existing_symbols = existing.get("symbols", {})
+        existing_symbols.update(result)  # overwrite only fetched symbols
+
+        snapshot = {
+            "timestamp":        datetime.now(timezone.utc).isoformat(),
+            "symbols":          existing_symbols,
+            "last_fetched":     symbols,  # track which were just updated
+        }
+
+        with open(OUTPUT_PATH, "w") as f:
+            json.dump(snapshot, f, indent=2)
+        print(f"\nSnapshot saved -> {OUTPUT_PATH}  (symbols: {list(existing_symbols.keys())})")
+        return snapshot
+
+    finally:
+        ib.disconnect()
+        print("Disconnected.")
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    port = int(args[args.index("--port") + 1]) if "--port" in args else None
+    # All non-flag args are symbol tickers: python market_data.py QQQ SMH --port 4001
+    syms = [a for a in args if not a.startswith("--") and not a.lstrip("-").isdigit()]
+    fetch_all(symbols=syms or None, force_port=port)

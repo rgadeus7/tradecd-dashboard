@@ -1,0 +1,461 @@
+{
+  "timestamp": "2026-04-26T04:56:29.750052+00:00",
+  "symbols": {
+    "SMH": {
+      "15min": {
+        "close": 506.5,
+        "ma20": 506.404,
+        "ma50": 504.9968,
+        "ma200": 486.008,
+        "rsi": 55.8886,
+        "supertrend": 504.3562,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 0.02,
+          "pct_from_ma50": 0.3,
+          "pct_from_ma200": 4.22,
+          "pct_from_supertrend": 0.43,
+          "flags": []
+        }
+      },
+      "2H": {
+        "close": 506.5,
+        "ma20": 490.806,
+        "ma50": 474.625,
+        "ma200": 423.2674,
+        "rsi": 78.6954,
+        "supertrend": 491.6586,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 3.2,
+          "pct_from_ma50": 6.72,
+          "pct_from_ma200": 19.66,
+          "pct_from_supertrend": 3.02,
+          "flags": [
+            "overextended_from_ma200"
+          ]
+        }
+      },
+      "daily": {
+        "close": 506.5,
+        "ma20": 434.048,
+        "ma50": 413.8458,
+        "ma200": 357.6111,
+        "rsi": 83.3694,
+        "supertrend": 458.3029,
+        "supertrend_dir": "bullish",
+        "atr14": 13.9392,
+        "overextension": {
+          "pct_from_ma20": 16.69,
+          "pct_from_ma50": 22.39,
+          "pct_from_ma200": 41.63,
+          "pct_from_supertrend": 10.52,
+          "flags": [
+            "overextended_from_ma200",
+            "overextended_from_ma50",
+            "overextended_from_ma20",
+            "overextended_from_supertrend"
+          ]
+        },
+        "last_5_days": [
+          {
+            "date": "2026-04-20",
+            "high": 465.74,
+            "low": 458.65,
+            "close": 465.2
+          },
+          {
+            "date": "2026-04-21",
+            "high": 468.43,
+            "low": 462.24,
+            "close": 467.51
+          },
+          {
+            "date": "2026-04-22",
+            "high": 483.0,
+            "low": 467.17,
+            "close": 482.28
+          },
+          {
+            "date": "2026-04-23",
+            "high": 491.09,
+            "low": 475.19,
+            "close": 490.7
+          },
+          {
+            "date": "2026-04-24",
+            "high": 509.59,
+            "low": 489.52,
+            "close": 506.5
+          }
+        ]
+      },
+      "weekly": {
+        "close": 506.5,
+        "ma20": 400.0575,
+        "ma50": 341.3672,
+        "ma200": 218.5089,
+        "rsi": 78.9295,
+        "supertrend": 384.8615,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 26.61,
+          "pct_from_ma50": 48.37,
+          "pct_from_ma200": 131.8,
+          "pct_from_supertrend": 31.61,
+          "flags": [
+            "overextended_from_ma200",
+            "overextended_from_ma50",
+            "overextended_from_ma20",
+            "overextended_from_supertrend"
+          ]
+        },
+        "sideways": {
+          "range_10w_pct": 29.71,
+          "range_15w_pct": 29.71,
+          "consolidating_10w": false,
+          "consolidating_15w": false
+        },
+        "last_5_weeks": [
+          {
+            "date": "2026-03-27",
+            "high": 402.5,
+            "low": 372.31,
+            "close": 372.38
+          },
+          {
+            "date": "2026-04-02",
+            "high": 396.63,
+            "low": 359.13,
+            "close": 391.35
+          },
+          {
+            "date": "2026-04-10",
+            "high": 441.54,
+            "low": 389.64,
+            "close": 436.9
+          },
+          {
+            "date": "2026-04-17",
+            "high": 466.18,
+            "low": 425.9,
+            "close": 463.14
+          },
+          {
+            "date": "2026-04-24",
+            "high": 509.59,
+            "low": 458.65,
+            "close": 506.5
+          }
+        ]
+      },
+      "monthly": {
+        "close": 506.5,
+        "ma20": 303.5395,
+        "rsi": 84.3381,
+        "supertrend": 287.3711,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 66.86,
+          "pct_from_supertrend": 76.25,
+          "flags": [
+            "overextended_from_ma20",
+            "overextended_from_supertrend"
+          ]
+        },
+        "last_5_months": [
+          {
+            "date": "2025-12-31",
+            "high": 375.59,
+            "low": 338.06,
+            "close": 360.49
+          },
+          {
+            "date": "2026-01-30",
+            "high": 421.59,
+            "low": 363.92,
+            "close": 403.24
+          },
+          {
+            "date": "2026-02-27",
+            "high": 431.0,
+            "low": 374.04,
+            "close": 405.59
+          },
+          {
+            "date": "2026-03-31",
+            "high": 407.36,
+            "low": 359.13,
+            "close": 385.81
+          },
+          {
+            "date": "2026-04-24",
+            "high": 509.59,
+            "low": 376.9,
+            "close": 506.5
+          }
+        ],
+        "last_5_quarters": [
+          {
+            "quarter": "2025Q2",
+            "high": 280.8,
+            "low": 165.96,
+            "close": 278.74
+          },
+          {
+            "quarter": "2025Q3",
+            "high": 326.83,
+            "low": 272.16,
+            "close": 325.34
+          },
+          {
+            "quarter": "2025Q4",
+            "high": 375.59,
+            "low": 315.05,
+            "close": 360.49
+          },
+          {
+            "quarter": "2026Q1",
+            "high": 431.0,
+            "low": 359.13,
+            "close": 385.81
+          },
+          {
+            "quarter": "2026Q2",
+            "high": 509.59,
+            "low": 376.9,
+            "close": 506.5
+          }
+        ]
+      }
+    },
+    "QQQ": {
+      "15min": {
+        "close": 663.46,
+        "ma20": 663.629,
+        "ma50": 662.1936,
+        "ma200": 655.065,
+        "rsi": 56.5212,
+        "supertrend": 662.4971,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": -0.03,
+          "pct_from_ma50": 0.19,
+          "pct_from_ma200": 1.28,
+          "pct_from_supertrend": 0.15,
+          "flags": []
+        }
+      },
+      "2H": {
+        "close": 663.46,
+        "ma20": 656.7895,
+        "ma50": 650.8036,
+        "ma200": 608.4179,
+        "rsi": 69.3065,
+        "supertrend": 653.5136,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 1.02,
+          "pct_from_ma50": 1.94,
+          "pct_from_ma200": 9.05,
+          "pct_from_supertrend": 1.52,
+          "flags": []
+        }
+      },
+      "daily": {
+        "close": 663.46,
+        "ma20": 616.4055,
+        "ma50": 606.8014,
+        "ma200": 601.5874,
+        "rsi": 78.0314,
+        "supertrend": 623.8937,
+        "supertrend_dir": "bullish",
+        "atr14": 11.7838,
+        "overextension": {
+          "pct_from_ma20": 7.63,
+          "pct_from_ma50": 9.34,
+          "pct_from_ma200": 10.28,
+          "pct_from_supertrend": 6.34,
+          "flags": [
+            "overextended_from_ma20",
+            "overextended_from_supertrend"
+          ]
+        },
+        "last_5_days": [
+          {
+            "date": "2026-04-20",
+            "high": 649.34,
+            "low": 642.52,
+            "close": 647.97
+          },
+          {
+            "date": "2026-04-21",
+            "high": 650.59,
+            "low": 642.21,
+            "close": 647.49
+          },
+          {
+            "date": "2026-04-22",
+            "high": 656.34,
+            "low": 647.51,
+            "close": 655.45
+          },
+          {
+            "date": "2026-04-23",
+            "high": 656.92,
+            "low": 645.52,
+            "close": 655.16
+          },
+          {
+            "date": "2026-04-24",
+            "high": 664.51,
+            "low": 651.9,
+            "close": 663.46
+          }
+        ]
+      },
+      "weekly": {
+        "close": 663.46,
+        "ma20": 611.592,
+        "ma50": 589.0892,
+        "ma200": 444.2273,
+        "rsi": 66.4666,
+        "supertrend": 571.1932,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 8.48,
+          "pct_from_ma50": 12.62,
+          "pct_from_ma200": 49.35,
+          "pct_from_supertrend": 16.15,
+          "flags": [
+            "overextended_from_ma200",
+            "overextended_from_ma50",
+            "overextended_from_ma20",
+            "overextended_from_supertrend"
+          ]
+        },
+        "sideways": {
+          "range_10w_pct": 16.43,
+          "range_15w_pct": 16.43,
+          "consolidating_10w": false,
+          "consolidating_15w": false
+        },
+        "last_5_weeks": [
+          {
+            "date": "2026-03-27",
+            "high": 597.0,
+            "low": 560.0,
+            "close": 560.13
+          },
+          {
+            "date": "2026-04-02",
+            "high": 587.74,
+            "low": 555.49,
+            "close": 584.8
+          },
+          {
+            "date": "2026-04-10",
+            "high": 613.67,
+            "low": 578.4,
+            "close": 612.49
+          },
+          {
+            "date": "2026-04-17",
+            "high": 650.0,
+            "low": 602.68,
+            "close": 648.97
+          },
+          {
+            "date": "2026-04-24",
+            "high": 664.51,
+            "low": 642.21,
+            "close": 663.46
+          }
+        ]
+      },
+      "monthly": {
+        "close": 663.46,
+        "ma20": 555.2245,
+        "rsi": 72.8393,
+        "supertrend": 495.1721,
+        "supertrend_dir": "bullish",
+        "overextension": {
+          "pct_from_ma20": 19.49,
+          "pct_from_supertrend": 33.99,
+          "flags": [
+            "overextended_from_ma20",
+            "overextended_from_supertrend"
+          ]
+        },
+        "last_5_months": [
+          {
+            "date": "2025-12-31",
+            "high": 629.21,
+            "low": 600.28,
+            "close": 614.26
+          },
+          {
+            "date": "2026-01-30",
+            "high": 637.61,
+            "low": 605.46,
+            "close": 620.24
+          },
+          {
+            "date": "2026-02-27",
+            "high": 630.53,
+            "low": 587.44,
+            "close": 605.38
+          },
+          {
+            "date": "2026-03-31",
+            "high": 613.47,
+            "low": 555.49,
+            "close": 580.19
+          },
+          {
+            "date": "2026-04-24",
+            "high": 664.51,
+            "low": 571.66,
+            "close": 663.46
+          }
+        ],
+        "last_5_quarters": [
+          {
+            "quarter": "2025Q2",
+            "high": 552.8,
+            "low": 396.0,
+            "close": 551.56
+          },
+          {
+            "quarter": "2025Q3",
+            "high": 602.98,
+            "low": 544.54,
+            "close": 598.75
+          },
+          {
+            "quarter": "2025Q4",
+            "high": 638.41,
+            "low": 580.27,
+            "close": 614.26
+          },
+          {
+            "quarter": "2026Q1",
+            "high": 637.61,
+            "low": 555.49,
+            "close": 580.19
+          },
+          {
+            "quarter": "2026Q2",
+            "high": 664.51,
+            "low": 571.66,
+            "close": 663.46
+          }
+        ]
+      },
+      "_fetched_at": "2026-04-26T04:56:29.749052+00:00"
+    }
+  },
+  "last_fetched": [
+    "QQQ"
+  ]
+}
