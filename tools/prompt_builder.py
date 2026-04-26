@@ -132,6 +132,16 @@ def _tf_block(tf, tf_data):
     if sideways:
         lines.append(_sideways_section(sideways))
 
+    # FBD / FBO signals
+    fbd = tf_data.get("fbd_levels", [])
+    fbo = tf_data.get("fbo_levels", [])
+    if fbd:
+        levels = ", ".join(f"{v:.2f}" for v in fbd)
+        lines.append(f"  ✓ FAILED BREAKDOWN (bullish): price rejected below {levels}")
+    if fbo:
+        levels = ", ".join(f"{v:.2f}" for v in fbo)
+        lines.append(f"  ✗ FAILED BREAKOUT (bearish): price rejected above {levels}")
+
     # Structural levels
     struct = _structural_levels(tf_data)
     if struct:
@@ -149,8 +159,13 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
     Returns a string ready to send as the user message.
     """
     if snapshot is None:
-        with open(SNAPSHOT_PATH) as f:
-            snapshot = json.load(f)
+        if not SNAPSHOT_PATH.exists() or SNAPSHOT_PATH.stat().st_size == 0:
+            return "No market data available — fetch from IBKR first."
+        try:
+            with open(SNAPSHOT_PATH) as f:
+                snapshot = json.load(f)
+        except json.JSONDecodeError:
+            return "Snapshot file is corrupt — fetch from IBKR to regenerate."
 
     timestamp      = snapshot.get("timestamp", "unknown")
     all_symbols    = snapshot.get("symbols", {})

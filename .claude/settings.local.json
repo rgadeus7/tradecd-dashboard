@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python -c \"from tools.ai_client import chat, SYSTEM_PROMPT, _get_active_providers; providers = _get_active_providers\\(\\); print\\('Active providers:', [p['name'] for p in providers]\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import scripts.market_data; print\\('Import OK'\\)\")",
+      "Bash(python -c \"import scripts.market_data; import tools.prompt_builder; print\\('Both import OK'\\)\")",
+      "Bash(python -c \"import app\")",
+      "Bash(python -c \"from scripts.market_data import fetch_all, resolve_contract, DEFAULT_SYMBOLS; print\\('OK — defaults:', DEFAULT_SYMBOLS\\)\")",
+      "Bash(python -c \"from tools.prompt_builder import build_prompt, build_messages; print\\('OK'\\)\")",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(python -c \"from scripts.market_data import fetch_all, TIMEFRAMES; print\\('OK'\\); print\\('TFs:', {k: v[2] for k, v in TIMEFRAMES.items\\(\\)}\\)\")",
+      "Bash(python scripts/scoring.py)",
+      "Bash(python -c \"from scripts.market_data import fetch_all; from scripts.scoring import score_snapshot, format_telegram; print\\('OK'\\)\")"
+    ]
+  }
+}

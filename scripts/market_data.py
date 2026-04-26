@@ -57,13 +57,13 @@ INDEX_EXCHANGE = {"SPX": "CBOE", "NDX": "NASDAQ", "RUT": "ICE",
 OUTPUT_PATH = Path(__file__).parent.parent / "data" / "market_snapshot.json"
 OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-# barSize, duration, MAs to include
+# barSize, duration, MAs to include (all SMA, MA200 only on 15min–weekly)
 TIMEFRAMES = {
-    "15min":   ("15 mins", "1 M",  ["ma20", "ma50", "ma200"]),
-    "2H":      ("2 hours", "3 M",  ["ma20", "ma50", "ma200"]),
-    "daily":   ("1 day",   "1 Y",  ["ma20", "ma50", "ma200"]),
-    "weekly":  ("1 week",  "5 Y",  ["ma20", "ma50", "ma200"]),
-    "monthly": ("1 month", "5 Y",  ["ma20"]),
+    "15min":   ("15 mins", "1 M",  ["ma8", "ma20", "ma50", "ma200"]),
+    "2H":      ("2 hours", "3 M",  ["ma8", "ma20", "ma50", "ma200"]),
+    "daily":   ("1 day",   "1 Y",  ["ma8", "ma20", "ma50", "ma200"]),
+    "weekly":  ("1 week",  "5 Y",  ["ma8", "ma20", "ma50", "ma200"]),
+    "monthly": ("1 month", "5 Y",  ["ma8", "ma20"]),
 }
 
 
@@ -195,12 +195,33 @@ def add_indicators(df, mas, include_atr=False):
     df = df.copy()
     close = df["close"]
 
+    # MAs — all SMA
     for ma in mas:
         period = int(ma.replace("ma", ""))
         df[ma] = close.rolling(period).mean()
 
-    df["rsi"] = _rsi(close)
+    # RSI + RSI MA (9 EMA of RSI — industry standard signal line)
+    df["rsi"]    = _rsi(close)
+    df["rsi_ma"] = df["rsi"].ewm(span=9, min_periods=9).mean()
+
+    # SuperTrend
     df["supertrend"], df["supertrend_dir"] = _supertrend(df)
+
+    # Bollinger Bands — basis SMA20, three SD levels
+    bb_basis      = close.rolling(20).mean()
+    bb_std        = close.rolling(20).std()
+    df["bb_basis"]    = bb_basis
+    df["bb_upper_2"]  = bb_basis + 2.0 * bb_std
+    df["bb_lower_2"]  = bb_basis - 2.0 * bb_std
+    df["bb_upper_25"] = bb_basis + 2.5 * bb_std
+    df["bb_lower_25"] = bb_basis - 2.5 * bb_std
+    df["bb_upper_3"]  = bb_basis + 3.0 * bb_std
+    df["bb_lower_3"]  = bb_basis - 3.0 * bb_std
+    # BB width % — measures volatility expansion/contraction
+    df["bb_width"]    = (df["bb_upper_2"] - df["bb_lower_2"]) / bb_basis * 100
+    # BB position — where price sits within 2SD bands (0=lower, 100=upper, 50=middle)
+    band_range        = df["bb_upper_2"] - df["bb_lower_2"]
+    df["bb_position"] = ((close - df["bb_lower_2"]) / band_range * 100).clip(0, 100)
 
     if include_atr:
         df["atr14"] = _atr(df, 14)
@@ -269,6 +290,32 @@ def _sideways(df, weeks):
     return round(rng / close * 100, 2) if close else None
 
 
+def _detect_fbd_fbo(current_bar, prior_bars):
+    """
+    Detect Failed Breakdown (FBD) and Failed Breakout (FBO) against a list of prior bar dicts.
+    Returns (fbd_levels, fbo_levels) — lists of price levels where failure occurred.
+    FBD: current low < prior low but current close > prior low  (bullish rejection)
+    FBO: current high > prior high but current close < prior high (bearish rejection)
+    """
+    cur_low   = float(current_bar["low"])
+    cur_high  = float(current_bar["high"])
+    cur_close = float(current_bar["close"])
+
+    fbd_levels = []
+    fbo_levels = []
+
+    for bar in prior_bars:
+        pl = bar["low"]
+        ph = bar["high"]
+
+        if cur_low < pl and cur_close > pl:
+            fbd_levels.append(round(pl, 4))
+        if cur_high > ph and cur_close < ph:
+            fbo_levels.append(round(ph, 4))
+
+    return fbd_levels, fbo_levels
+
+
 def build_tf_snapshot(tf, df):
     _, _, mas = TIMEFRAMES[tf]
     include_atr = (tf == "daily")
@@ -278,11 +325,18 @@ def build_tf_snapshot(tf, df):
     close = float(last["close"])
 
     snap = {"close": _v(close)}
+    snap["current_high"] = _v(float(last["high"]))
+    snap["current_low"]  = _v(float(last["low"]))
 
     for ma in mas:
         snap[ma] = _v(last.get(ma))
 
     snap["rsi"]            = _v(last.get("rsi"))
+    snap["rsi_ma"]         = _v(last.get("rsi_ma"))
+    snap["rsi_above_ma"]   = (
+        bool(last.get("rsi", 0) > last.get("rsi_ma", 0))
+        if last.get("rsi") is not None and last.get("rsi_ma") is not None else None
+    )
     snap["supertrend"]     = _v(last.get("supertrend"))
     snap["supertrend_dir"] = (
         "bullish" if last.get("supertrend_dir") == 1
@@ -292,6 +346,20 @@ def build_tf_snapshot(tf, df):
 
     if include_atr:
         snap["atr14"] = _v(last.get("atr14"))
+
+    # ── Bollinger Bands ────────────────────────────────────────────────────────
+    snap["bb"] = {
+        "basis":     _v(last.get("bb_basis")),
+        "upper_2":   _v(last.get("bb_upper_2")),
+        "lower_2":   _v(last.get("bb_lower_2")),
+        "upper_25":  _v(last.get("bb_upper_25")),
+        "lower_25":  _v(last.get("bb_lower_25")),
+        "upper_3":   _v(last.get("bb_upper_3")),
+        "lower_3":   _v(last.get("bb_lower_3")),
+        "width_pct": _v(last.get("bb_width")),
+        "position":  _v(last.get("bb_position")),  # 0=lower band, 100=upper band
+    }
+    snap["bb"] = {k: v for k, v in snap["bb"].items() if v is not None}
 
     # ── Overextension metrics ──────────────────────────────────────────────────
     overext = {}
@@ -304,7 +372,7 @@ def build_tf_snapshot(tf, df):
     if st_pct is not None:
         overext["pct_from_supertrend"] = st_pct
 
-    # Soft flags — LLM gets both raw % and flag for emphasis
+    # Soft flags — MA, SuperTrend, and BB band breaches
     flags = []
     if overext.get("pct_from_ma200") is not None and abs(overext["pct_from_ma200"]) > 15:
         flags.append("overextended_from_ma200")
@@ -314,6 +382,17 @@ def build_tf_snapshot(tf, df):
         flags.append("overextended_from_ma20")
     if overext.get("pct_from_supertrend") is not None and abs(overext["pct_from_supertrend"]) > 5:
         flags.append("overextended_from_supertrend")
+
+    bb_pos = last.get("bb_position")
+    if bb_pos is not None:
+        if close >= _v(last.get("bb_upper_3")) if last.get("bb_upper_3") else False:
+            flags.append("above_bb_3sd")
+        elif close >= _v(last.get("bb_upper_25")) if last.get("bb_upper_25") else False:
+            flags.append("above_bb_25sd")
+        elif close <= _v(last.get("bb_lower_3")) if last.get("bb_lower_3") else False:
+            flags.append("below_bb_3sd")
+        elif close <= _v(last.get("bb_lower_25")) if last.get("bb_lower_25") else False:
+            flags.append("below_bb_25sd")
 
     if overext:
         snap["overextension"] = {**overext, "flags": flags}
@@ -330,14 +409,37 @@ def build_tf_snapshot(tf, df):
         }
         snap["sideways"] = {k: v for k, v in sideways.items() if v is not None}
 
-    # ── Structural levels ──────────────────────────────────────────────────────
+    # ── Structural levels + FBD/FBO detection ─────────────────────────────────────
+    current_bar = {"low": last["low"], "high": last["high"], "close": last["close"]}
+    fbd_all, fbo_all = [], []
+
     if tf == "daily":
-        snap["last_5_days"]     = _bar_records(df, 5)
+        prior = _bar_records(df, 6)[:-1]   # 5 completed bars before current
+        snap["last_5_days"] = _bar_records(df, 5)
+        fbd, fbo = _detect_fbd_fbo(current_bar, prior)
+        fbd_all += fbd
+        fbo_all += fbo
     elif tf == "weekly":
-        snap["last_5_weeks"]    = _bar_records(df, 5)
+        prior = _bar_records(df, 6)[:-1]
+        snap["last_5_weeks"] = _bar_records(df, 5)
+        fbd, fbo = _detect_fbd_fbo(current_bar, prior)
+        fbd_all += fbd
+        fbo_all += fbo
     elif tf == "monthly":
+        prior_months   = _bar_records(df, 6)[:-1]
+        prior_quarters = _quarterly(df, 6)
+        if prior_quarters:
+            prior_quarters = prior_quarters[:-1]   # exclude current quarter
         snap["last_5_months"]   = _bar_records(df, 5)
         snap["last_5_quarters"] = _quarterly(df, 5)
+        fbd, fbo = _detect_fbd_fbo(current_bar, prior_months + prior_quarters)
+        fbd_all += fbd
+        fbo_all += fbo
+
+    if fbd_all:
+        snap["fbd_levels"] = sorted(set(fbd_all))
+    if fbo_all:
+        snap["fbo_levels"] = sorted(set(fbo_all))
 
     # Drop None values
     return {k: v for k, v in snap.items() if v is not None}
@@ -387,18 +489,29 @@ def fetch_all(symbols=None, force_port=None):
 
         # Merge with existing snapshot — only update symbols we just fetched
         existing = {}
-        if OUTPUT_PATH.exists():
-            with open(OUTPUT_PATH) as f:
-                existing = json.load(f)
+        if OUTPUT_PATH.exists() and OUTPUT_PATH.stat().st_size > 0:
+            try:
+                with open(OUTPUT_PATH) as f:
+                    existing = json.load(f)
+            except json.JSONDecodeError:
+                print("Warning: existing snapshot was corrupt — starting fresh")
 
         existing_symbols = existing.get("symbols", {})
         existing_symbols.update(result)  # overwrite only fetched symbols
 
         snapshot = {
-            "timestamp":        datetime.now(timezone.utc).isoformat(),
-            "symbols":          existing_symbols,
-            "last_fetched":     symbols,  # track which were just updated
+            "timestamp":    datetime.now(timezone.utc).isoformat(),
+            "symbols":      existing_symbols,
+            "last_fetched": symbols,
         }
+
+        # Score all symbols after merge
+        import sys as _sys
+        _root = str(Path(__file__).parent.parent)
+        if _root not in _sys.path:
+            _sys.path.insert(0, _root)
+        from scripts.scoring import score_snapshot
+        snapshot = score_snapshot(snapshot)
 
         with open(OUTPUT_PATH, "w") as f:
             json.dump(snapshot, f, indent=2)
