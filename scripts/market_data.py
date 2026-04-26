@@ -409,40 +409,94 @@ def build_tf_snapshot(tf, df):
         }
         snap["sideways"] = {k: v for k, v in sideways.items() if v is not None}
 
-    # ── Structural levels + FBD/FBO detection ─────────────────────────────────────
-    current_bar = {"low": last["low"], "high": last["high"], "close": last["close"]}
-    fbd_all, fbo_all = [], []
-
+    # ── Structural levels ──────────────────────────────────────────────────────
     if tf == "daily":
-        prior = _bar_records(df, 6)[:-1]   # 5 completed bars before current
-        snap["last_5_days"] = _bar_records(df, 5)
-        fbd, fbo = _detect_fbd_fbo(current_bar, prior)
-        fbd_all += fbd
-        fbo_all += fbo
+        snap["last_5_days"]     = _bar_records(df, 5)
     elif tf == "weekly":
-        prior = _bar_records(df, 6)[:-1]
-        snap["last_5_weeks"] = _bar_records(df, 5)
-        fbd, fbo = _detect_fbd_fbo(current_bar, prior)
-        fbd_all += fbd
-        fbo_all += fbo
+        snap["last_5_weeks"]    = _bar_records(df, 5)
     elif tf == "monthly":
-        prior_months   = _bar_records(df, 6)[:-1]
-        prior_quarters = _quarterly(df, 6)
-        if prior_quarters:
-            prior_quarters = prior_quarters[:-1]   # exclude current quarter
         snap["last_5_months"]   = _bar_records(df, 5)
         snap["last_5_quarters"] = _quarterly(df, 5)
-        fbd, fbo = _detect_fbd_fbo(current_bar, prior_months + prior_quarters)
-        fbd_all += fbd
-        fbo_all += fbo
-
-    if fbd_all:
-        snap["fbd_levels"] = sorted(set(fbd_all))
-    if fbo_all:
-        snap["fbo_levels"] = sorted(set(fbo_all))
 
     # Drop None values
     return {k: v for k, v in snap.items() if v is not None}
+
+
+# ── Cross-TF FBD/FBO enrichment ───────────────────────────────────────────────
+# Which higher-TF structural level keys to check for each target TF
+_CROSS_TF_SOURCES = {
+    "15min":   [("daily",   "last_5_days"),
+                ("weekly",  "last_5_weeks")],
+    "2H":      [("daily",   "last_5_days"),
+                ("weekly",  "last_5_weeks"),
+                ("monthly", "last_5_months"),
+                ("monthly", "last_5_quarters")],
+    "daily":   [("weekly",  "last_5_weeks"),
+                ("monthly", "last_5_months"),
+                ("monthly", "last_5_quarters")],
+    "weekly":  [("monthly", "last_5_months"),
+                ("monthly", "last_5_quarters")],
+    "monthly": [("monthly", "last_5_months"),
+                ("monthly", "last_5_quarters")],
+}
+
+_SOURCE_LABEL = {
+    "last_5_days":     "Daily",
+    "last_5_weeks":    "Weekly",
+    "last_5_months":   "Monthly",
+    "last_5_quarters": "Quarterly",
+}
+
+
+def enrich_cross_tf_fbd_fbo(sym_data: dict) -> None:
+    """
+    For each target TF, check its current bar against higher-TF structural levels.
+    Stores fbd_levels / fbo_levels as list of {"level": float, "source": str}.
+    Mutates sym_data in place.
+    """
+    for target_tf, sources in _CROSS_TF_SOURCES.items():
+        tf_data = sym_data.get(target_tf)
+        if not isinstance(tf_data, dict) or "close" not in tf_data:
+            continue
+
+        current_bar = {
+            "low":   tf_data.get("current_low",  tf_data["close"]),
+            "high":  tf_data.get("current_high", tf_data["close"]),
+            "close": tf_data["close"],
+        }
+
+        fbd_levels = []
+        fbo_levels = []
+
+        for source_tf, level_key in sources:
+            # For monthly self-check, exclude the current bar (last record = current month)
+            bars = sym_data.get(source_tf, {}).get(level_key, [])
+            if not bars:
+                continue
+            # If checking monthly against itself, skip the last bar (current period)
+            if source_tf == target_tf:
+                bars = bars[:-1]
+
+            label = _SOURCE_LABEL.get(level_key, source_tf.title())
+            fbd, fbo = _detect_fbd_fbo(current_bar, bars)
+            for lvl in fbd:
+                fbd_levels.append({"level": lvl, "source": label})
+            for lvl in fbo:
+                fbo_levels.append({"level": lvl, "source": label})
+
+        # Deduplicate levels within 0.5% of each other (keep first occurrence)
+        def _dedup(items):
+            seen = []
+            for item in items:
+                lvl = item["level"]
+                if not any(abs(lvl - s["level"]) / max(s["level"], 0.01) < 0.005 for s in seen):
+                    seen.append(item)
+            return seen
+
+        if fbd_levels:
+            tf_data["fbd_levels"] = _dedup(fbd_levels)
+        if fbo_levels:
+            tf_data["fbo_levels"] = _dedup(fbo_levels)
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -484,6 +538,7 @@ def fetch_all(symbols=None, force_port=None):
                     print(f"ERROR -- {e}")
                     sym_snap[tf] = {}
 
+            enrich_cross_tf_fbd_fbo(sym_snap)
             sym_snap["_fetched_at"] = datetime.now(timezone.utc).isoformat()
             result[sym] = sym_snap
 

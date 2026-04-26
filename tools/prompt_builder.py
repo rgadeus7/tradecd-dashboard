@@ -136,11 +136,11 @@ def _tf_block(tf, tf_data):
     fbd = tf_data.get("fbd_levels", [])
     fbo = tf_data.get("fbo_levels", [])
     if fbd:
-        levels = ", ".join(f"{v:.2f}" for v in fbd)
-        lines.append(f"  ✓ FAILED BREAKDOWN (bullish): price rejected below {levels}")
+        levels = ", ".join(f"{r['level']:.2f} ({r['source']})" for r in fbd)
+        lines.append(f"  ✓ FAILED BREAKDOWN (bullish): failed to break below {levels}")
     if fbo:
-        levels = ", ".join(f"{v:.2f}" for v in fbo)
-        lines.append(f"  ✗ FAILED BREAKOUT (bearish): price rejected above {levels}")
+        levels = ", ".join(f"{r['level']:.2f} ({r['source']})" for r in fbo)
+        lines.append(f"  ✗ FAILED BREAKOUT (bearish): failed to break above {levels}")
 
     # Structural levels
     struct = _structural_levels(tf_data)

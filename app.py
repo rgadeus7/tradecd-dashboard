@@ -108,8 +108,8 @@ def _tf_key_signals(tf, tf_data):
 
     fbd = tf_data.get("fbd_levels", [])
     fbo = tf_data.get("fbo_levels", [])
-    for lvl in fbd: signals.append(f"FBD {lvl:.2f}")
-    for lvl in fbo: signals.append(f"FBO {lvl:.2f}")
+    for r in fbd: signals.append(f"FBD {_price(r['level'])} ({r['source']})")
+    for r in fbo: signals.append(f"FBO {_price(r['level'])} ({r['source']})")
 
     return signals
 
@@ -183,11 +183,11 @@ def render_tf_card(tf, tf_data):
         fbd_levels = tf_data.get("fbd_levels", [])
         fbo_levels = tf_data.get("fbo_levels", [])
         if fbd_levels:
-            st.success("FBD — failed to break below:" +
-                       ", ".join(_price(lvl) for lvl in fbd_levels))
+            parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in fbd_levels)
+            st.success(f"FBD — failed to break below: {parts}")
         if fbo_levels:
-            st.error("FBO — failed to break above:" +
-                     ", ".join(_price(lvl) for lvl in fbo_levels))
+            parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in fbo_levels)
+            st.error(f"FBO — failed to break above: {parts}")
 
         # Key metrics
         cols = st.columns(4)
@@ -318,11 +318,11 @@ def render_snapshot(snapshot):
                     if isinstance(tf_map.get(tf), dict) and tf_map[tf].get("fbo_levels")
                 ]
                 for tf_label, levels in fbd_rows:
-                    st.success(f"FBD ({tf_label}) — found support at: " +
-                               ", ".join(_price(l) for l in levels))
+                    parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in levels)
+                    st.success(f"FBD ({tf_label}) — failed to break below: {parts}")
                 for tf_label, levels in fbo_rows:
-                    st.error(f"FBO ({tf_label}) — found resistance at: " +
-                             ", ".join(_price(l) for l in levels))
+                    parts = ", ".join(f"{_price(r['level'])} ({r['source']})" for r in levels)
+                    st.error(f"FBO ({tf_label}) — failed to break above: {parts}")
 
                 st.divider()
 

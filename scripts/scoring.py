@@ -150,11 +150,11 @@ def _reversal(tf_data: dict) -> tuple[int, str, list]:
     fbo = tf_data.get("fbo_levels", [])
     if fbd:
         pts = min(len(fbd) * 2, 4)
-        levels = ", ".join(f"{v:.2f}" for v in fbd)
+        levels = ", ".join(f"{r['level']:.2f} ({r['source']})" for r in fbd)
         _add("dn", pts, f"FBD at {levels}")
     if fbo:
         pts = min(len(fbo) * 2, 4)
-        levels = ", ".join(f"{v:.2f}" for v in fbo)
+        levels = ", ".join(f"{r['level']:.2f} ({r['source']})" for r in fbo)
         _add("up", pts, f"FBO at {levels}")
 
     # Sideways / consolidation (adds to both sides equally)
