@@ -566,11 +566,16 @@ def fetch_all(symbols=None, force_port=None):
         if _root not in _sys.path:
             _sys.path.insert(0, _root)
         from scripts.scoring import score_snapshot
+        from tools.telegram import notify_snapshot
         snapshot = score_snapshot(snapshot)
 
         with open(OUTPUT_PATH, "w") as f:
             json.dump(snapshot, f, indent=2)
         print(f"\nSnapshot saved -> {OUTPUT_PATH}  (symbols: {list(existing_symbols.keys())})")
+
+        # Send Telegram notification for fetched symbols only
+        notify_snapshot(snapshot, symbols=symbols)
+
         return snapshot
 
     finally:
