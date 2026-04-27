@@ -297,7 +297,7 @@ def _murrey_math(df, frame=64, mult=1.5):
     Returns a dict of key levels + zone, or None if insufficient data.
     """
     import math as _math
-    lookback = max(int(round(frame * mult)), len(df))
+    lookback = min(int(round(frame * mult)), len(df))
     if len(df) < 8:
         return None
 

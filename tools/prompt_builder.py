@@ -6,7 +6,8 @@ Highlights overextension and sideways/consolidation risks prominently.
 import json
 from pathlib import Path
 
-SNAPSHOT_PATH = Path(__file__).parent.parent / "data" / "market_snapshot.json"
+SNAPSHOT_PATH         = Path(__file__).parent.parent / "data" / "market_snapshot.json"
+OPTIONS_SNAPSHOT_PATH = Path(__file__).parent.parent / "data" / "options_snapshot.json"
 
 TF_LABELS = {
     "15min":   "15-Minute",
@@ -161,6 +162,39 @@ def _tf_block(tf, tf_data):
     return "\n".join(lines)
 
 
+def _options_block(sym, sym_opts):
+    lines = [f"\n── {sym} Options ──────────────────────────────────────────"]
+    spot  = sym_opts.get("spot")
+    if spot:
+        lines.append(f"  Spot: {_price(spot)}")
+    for exp_key, m in sorted(sym_opts.get("expiries", {}).items()):
+        lines.append(
+            f"\n  Expiry: {m.get('expiry_fmt', exp_key)}  DTE={m.get('dte', '?')}"
+        )
+        cw  = m.get("call_wall")
+        pw  = m.get("put_wall")
+        gf  = m.get("gamma_flip")
+        mp  = m.get("max_pain")
+        pcr = m.get("pcr")
+        iv  = m.get("iv_pct")
+        std = m.get("straddle")
+        above = m.get("above_gamma_flip")
+        gf_note = (" (above → stable)" if above else " (below → volatile)") if above is not None else ""
+        lines.append(f"    Call Wall (resistance): {_price(cw) if cw else 'n/a'}")
+        lines.append(f"    Put Wall  (support):    {_price(pw) if pw else 'n/a'}")
+        lines.append(f"    Gamma Flip: {_price(gf) if gf else 'n/a'}{gf_note}")
+        lines.append(f"    Max Pain:   {_price(mp) if mp else 'n/a'}")
+        lines.append(f"    PCR ({m.get('pcr_basis','oi')}): {pcr if pcr else 'n/a'}  "
+                     f"IV: {iv}%  Straddle: {_price(std) if std else 'n/a'}")
+        tcs = m.get("top_call_strikes", [])
+        tps = m.get("top_put_strikes",  [])
+        if tcs:
+            lines.append(f"    Top call strikes: {', '.join(str(s) for s in tcs)}")
+        if tps:
+            lines.append(f"    Top put strikes:  {', '.join(str(s) for s in tps)}")
+    return "\n".join(lines)
+
+
 # ── Main builder ───────────────────────────────────────────────────────────────
 def build_prompt(snapshot=None, extra_context="", symbols=None):
     """
@@ -204,13 +238,24 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
         "5. Target levels (T1, T2, T3)",
         "6. Failed breakdown / breakout signals if any levels were recently violated",
         "7. Reversal risk assessment — flag if price is overextended or in consolidation",
+        "8. If options data is present: reference call wall, put wall, and gamma flip as key S/R levels",
         "",
         "Rules:",
         "- If ⚠ REVERSAL RISK or ⚠ CONSOLIDATING flags are present, address them explicitly",
         "- If multiple timeframes conflict, state the conflict and which TF takes precedence",
+        "- Options levels (call wall, put wall, gamma flip) are strong magnetic levels — use them",
         "- Be concise — use bullet points",
         "=" * 60,
     ]
+
+    # Load options snapshot if available
+    opts_snap = None
+    if OPTIONS_SNAPSHOT_PATH.exists() and OPTIONS_SNAPSHOT_PATH.stat().st_size > 0:
+        try:
+            with open(OPTIONS_SNAPSHOT_PATH) as f:
+                opts_snap = json.load(f)
+        except json.JSONDecodeError:
+            pass
 
     for sym, tf_map in symbols_data.items():
         prompt_parts.append(f"\n{'=' * 20} {sym} {'=' * 20}")
@@ -218,6 +263,12 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
             tf_data = tf_map.get(tf)
             if tf_data:
                 prompt_parts.append(_tf_block(tf, tf_data))
+
+        # Options section for this symbol
+        if opts_snap:
+            sym_opts = opts_snap.get("symbols", {}).get(sym)
+            if sym_opts:
+                prompt_parts.append(_options_block(sym, sym_opts))
 
     if extra_context:
         prompt_parts += ["", "─" * 40, "Additional context:", extra_context]

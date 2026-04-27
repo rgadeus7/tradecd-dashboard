@@ -1,0 +1,45 @@
+{
+  "jobs": [
+    {
+      "symbols": [
+        "ES",
+        "SMH",
+        "SPY",
+        "IWM",
+        "QQQ",
+        "GLD"
+      ],
+      "times_et": [
+        "15:30"
+      ]
+    },
+    {
+      "symbols": [
+        "ES",
+        "SPY"
+      ],
+      "times_et": [
+        "09:45"
+      ]
+    },
+    {
+      "symbols": [
+        "SPY"
+      ],
+      "times_et": [
+        "10:30"
+      ]
+    },
+    {
+      "symbols": [
+        "ES"
+      ],
+      "times_et": [
+        "23:26"
+      ]
+    }
+  ],
+  "days": "sun-fri",
+  "port": null,
+  "telegram": true
+}

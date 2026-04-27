@@ -12,7 +12,9 @@ from tools.prompt_builder import build_messages, build_prompt
 
 st.set_page_config(page_title="Trading Assistant", layout="wide")
 
-SNAPSHOT_PATH = Path("data/market_snapshot.json")
+SNAPSHOT_PATH         = Path("data/market_snapshot.json")
+OPTIONS_SNAPSHOT_PATH = Path("data/options_snapshot.json")
+SCHEDULER_CONFIG_PATH = Path("data/scheduler_config.json")
 
 TF_ORDER  = ["monthly", "weekly", "daily", "2H", "15min"]
 TF_LABELS = {"15min": "15-Min", "2H": "2-Hour", "daily": "Daily",
@@ -24,6 +26,17 @@ def load_snapshot():
         return None
     try:
         with open(SNAPSHOT_PATH) as f:
+            content = f.read().strip()
+            return json.loads(content) if content else None
+    except json.JSONDecodeError:
+        return None
+
+
+def load_options_snapshot():
+    if not OPTIONS_SNAPSHOT_PATH.exists():
+        return None
+    try:
+        with open(OPTIONS_SNAPSHOT_PATH) as f:
             content = f.read().strip()
             return json.loads(content) if content else None
     except json.JSONDecodeError:
@@ -117,6 +130,78 @@ def _tf_key_signals(tf, tf_data):
         else: signals.append(f"FBO {_price(r)}")
 
     return signals
+
+
+# ── Options metrics card ───────────────────────────────────────────────────────
+def _render_one_expiry(m, exp_key):
+    spot = m.get("spot")
+    cw   = m.get("call_wall")
+    pw   = m.get("put_wall")
+    gf   = m.get("gamma_flip")
+    mp   = m.get("max_pain")
+    pcr  = m.get("pcr")
+    iv   = m.get("iv_pct")
+    st_d = m.get("straddle")
+    above = m.get("above_gamma_flip")
+
+    r1c1, r1c2 = st.columns(2)
+    r1c1.metric("Call Wall", f"{cw:.1f}" if cw else "—",
+                delta=f"+{cw - spot:.1f}" if cw and spot else None,
+                delta_color="normal")
+    r1c2.metric("Put Wall", f"{pw:.1f}" if pw else "—",
+                delta=f"-{spot - pw:.1f}" if pw and spot else None,
+                delta_color="inverse")
+
+    r2c1, r2c2 = st.columns(2)
+    gf_delta = ("above → stable" if above else "below → volatile") if above is not None else None
+    r2c1.metric("Gamma Flip", f"{gf:.1f}" if gf else "—",
+                delta=gf_delta,
+                delta_color="normal" if above else "inverse")
+    r2c2.metric("Max Pain", f"{mp:.1f}" if mp else "—")
+
+    r3c1, r3c2 = st.columns(2)
+    pcr_basis = m.get("pcr_basis", "")
+    pcr_color = "inverse" if pcr and pcr > 1.3 else "normal" if pcr and pcr < 0.7 else "off"
+    r3c1.metric(f"PCR ({pcr_basis})", f"{pcr:.2f}" if pcr else "—",
+                delta_color=pcr_color)
+    r3c2.metric("ATM IV", f"{iv:.1f}%" if iv else "—")
+
+    if st_d:
+        st.caption(f"Straddle: {st_d:.2f}  ±{st_d:.2f} break-even")
+
+    tcs = m.get("top_call_strikes", [])
+    tps = m.get("top_put_strikes",  [])
+    if tcs or tps:
+        st.caption(
+            f"Top calls: {', '.join(str(s) for s in tcs) or '—'}  "
+            f"| Top puts: {', '.join(str(s) for s in tps) or '—'}"
+        )
+
+
+def render_options_card(sym, sym_opts):
+    """Render key options metrics — side-by-side for ≤2 expiries, tabs for 3+."""
+    expiries = sym_opts.get("expiries", {})
+    if not expiries:
+        st.caption("No options data for this symbol.")
+        return
+
+    exp_keys = sorted(expiries.keys())
+
+    if len(exp_keys) <= 2:
+        cols = st.columns(len(exp_keys))
+        for col, exp_key in zip(cols, exp_keys):
+            m = expiries[exp_key]
+            with col:
+                st.markdown(f"**{m.get('expiry_fmt', exp_key)}** &nbsp; {m.get('dte', '?')} DTE")
+                _render_one_expiry(m, exp_key)
+    else:
+        tab_labels = [f"{expiries[k].get('expiry_fmt', k)} ({expiries[k].get('dte', '?')}d)"
+                      for k in exp_keys]
+        tabs = st.tabs(tab_labels)
+        for tab, exp_key in zip(tabs, exp_keys):
+            m = expiries[exp_key]
+            with tab:
+                _render_one_expiry(m, exp_key)
 
 
 # ── Snapshot display ───────────────────────────────────────────────────────────
@@ -232,9 +317,6 @@ def render_tf_card(tf, tf_data):
                 f"Murrey Math {zone_color} {mlbl}  |  "
                 f"+2/8: {_price(mm.get('plus_28'))}  "
                 f"+1/8: {_price(mm.get('plus_18'))}  "
-                f"8/8: {_price(mm.get('eight_eight'))}  "
-                f"4/8: {_price(mm.get('four_eight'))}  "
-                f"0/8: {_price(mm.get('zero_eight'))}  "
                 f"-1/8: {_price(mm.get('minus_18'))}  "
                 f"-2/8: {_price(mm.get('minus_28'))}"
             )
@@ -389,6 +471,15 @@ def render_snapshot(snapshot):
 
                 st.divider()
 
+            # ── Options metrics ────────────────────────────────────────────────
+            opts_snap = load_options_snapshot()
+            sym_opts  = opts_snap.get("symbols", {}).get(sym) if opts_snap else None
+            if sym_opts:
+                opts_ts = opts_snap.get("timestamp", "")[:16].replace("T", " ")
+                with st.expander(f"Options — {sym}  ·  {opts_ts} UTC", expanded=False):
+                    render_options_card(sym, sym_opts)
+                st.divider()
+
             for tf in TF_ORDER:
                 tf_data = tf_map.get(tf)
                 if tf_data and isinstance(tf_data, dict) and "close" in tf_data:
@@ -443,6 +534,31 @@ with st.sidebar:
 
     st.divider()
 
+    # Fetch options data
+    st.subheader("Options Data")
+    opts_expiry = st.text_input(
+        "Expiry dates (optional)",
+        placeholder="20260502, 20260509",
+        help="Leave blank to auto-detect nearest + next-week Friday. "
+             "Enter YYYYMMDD dates comma-separated to override."
+    )
+    if st.button("Fetch Options", use_container_width=True, disabled=not symbols):
+        cmd = [sys.executable, "scripts/options_data.py"] + symbols
+        if port:
+            cmd += ["--port", port]
+        if opts_expiry.strip():
+            cmd += ["--expiry", opts_expiry.strip()]
+        with st.spinner(f"Fetching options for {', '.join(symbols)}..."):
+            result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            st.success(f"Options fetched: {', '.join(symbols)}")
+            st.rerun()
+        else:
+            st.error("Options fetch failed")
+            st.code(result.stderr[-1000:])
+
+    st.divider()
+
     # Run AI analysis
     st.subheader("AI Analysis")
 
@@ -493,6 +609,87 @@ with st.sidebar:
     tg_default = os.getenv("TELEGRAM_ENABLED", "true").strip().lower() == "true"
     tg_fetch   = st.toggle("Notify on IBKR fetch", value=tg_default, key="tg_fetch")
     tg_ai      = st.toggle("Notify on AI analysis", value=tg_default, key="tg_ai")
+
+    st.divider()
+
+    # Scheduler config (saved to file, picked up by run_scheduler.py)
+    st.subheader("Scheduler")
+
+    _sched_cfg = {}
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            _sched_cfg = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+        except Exception:
+            pass
+
+    # Seed session state from saved config once
+    if "sched_jobs" not in st.session_state:
+        saved_jobs = _sched_cfg.get("jobs", [{"symbols": ["ES", "SPY"], "times_et": ["15:30"]}])
+        st.session_state.sched_jobs = [
+            {"symbols": j.get("symbols", []), "times": ", ".join(j.get("times_et", []))}
+            for j in saved_jobs
+        ]
+
+    sched_days = st.radio(
+        "Market days",
+        ["Futures (Sun–Fri)", "Equities (Mon–Fri)"],
+        index=0 if _sched_cfg.get("days", "sun-fri") == "sun-fri" else 1,
+        horizontal=True, key="sched_days",
+    )
+    sched_tg = st.toggle("Telegram on schedule",
+                         value=_sched_cfg.get("telegram", True), key="sched_tg")
+
+    jobs_state = st.session_state.sched_jobs
+    to_remove  = None
+
+    for i, job in enumerate(jobs_state):
+        st.caption(f"Job {i + 1}")
+        c1, c2 = st.columns([3, 1])
+        job["symbols"] = c1.multiselect(
+            "Symbols", PRESET_SYMBOLS,
+            default=[s for s in job["symbols"] if s in PRESET_SYMBOLS],
+            key=f"sched_syms_{i}",
+            label_visibility="collapsed",
+        )
+        job["times"] = c2.text_input(
+            "Times ET", value=job["times"],
+            placeholder="09:30, 15:30",
+            key=f"sched_times_{i}",
+            label_visibility="collapsed",
+        )
+        if len(jobs_state) > 1:
+            if st.button("Remove", key=f"sched_rm_{i}"):
+                to_remove = i
+
+    if to_remove is not None:
+        st.session_state.sched_jobs.pop(to_remove)
+        st.rerun()
+
+    if st.button("+ Add job", use_container_width=True):
+        st.session_state.sched_jobs.append({"symbols": [], "times": ""})
+        st.rerun()
+
+    _valid = all(j["symbols"] and j["times"].strip() for j in jobs_state)
+    if st.button("Save schedule", use_container_width=True,
+                 type="primary", disabled=not _valid):
+        cfg_out = {
+            "jobs": [
+                {"symbols": j["symbols"],
+                 "times_et": [t.strip() for t in j["times"].split(",") if t.strip()]}
+                for j in jobs_state
+            ],
+            "days":     "sun-fri" if st.session_state.get("sched_days", "Futures (Sun–Fri)").startswith("Futures") else "mon-fri",
+            "port":     port or None,
+            "telegram": st.session_state.get("sched_tg", True),
+        }
+        SCHEDULER_CONFIG_PATH.write_text(json.dumps(cfg_out, indent=2))
+        st.success("Saved — restart run_scheduler.py to apply")
+
+    if _sched_cfg.get("jobs"):
+        with st.expander("Active config", expanded=False):
+            for j in _sched_cfg["jobs"]:
+                st.caption(f"• {', '.join(j['symbols'])}  @  {', '.join(j['times_et'])} ET")
+    st.caption("Double-click `start.bat` to launch app + scheduler together")
 
     st.divider()
     if st.button("Clear Chat", use_container_width=True):
