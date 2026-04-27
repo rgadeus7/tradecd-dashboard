@@ -17,6 +17,90 @@ TF_LABELS = {
     "monthly": "Monthly",
 }
 
+# ── Analysis profiles ──────────────────────────────────────────────────────────
+PROFILES = {
+    "intraday": {
+        "label":      "Intraday",
+        "timeframes": ["15min", "2H"],
+        "instructions": [
+            "You are analyzing for INTRADAY trading (same-day entries and exits).",
+            "1. Intraday bias (bullish / bearish / neutral) based on 15min and 2H structure",
+            "2. Key intraday support and resistance levels",
+            "3. Specific entry level and trigger (e.g. break above X, bounce from Y)",
+            "4. Stop loss — tight, use 15min ATR or nearest S/R",
+            "5. Intraday targets T1 and T2 — realistic for the session",
+            "6. Options gamma levels (call wall, put wall, gamma flip) as magnetic levels",
+            "7. Flag any reversal risk or overextension on 15min or 2H",
+            "",
+            "Rules:",
+            "- Focus on price action today — ignore multi-week structure",
+            "- Keep it tight and actionable — entries must be specific levels, not ranges",
+            "- If 15min and 2H conflict, state which takes precedence and why",
+            "- Be concise — bullet points only",
+        ],
+    },
+    "swing": {
+        "label":      "Swing",
+        "timeframes": ["daily", "weekly", "monthly"],
+        "instructions": [
+            "You are analyzing for SWING trading (multi-day to multi-week holds).",
+            "1. Overall directional bias across Daily / Weekly / Monthly",
+            "2. Key swing support and resistance levels (structural highs/lows)",
+            "3. Entry level — ideal pullback zone or breakout trigger",
+            "4. Stop loss — use Daily ATR14 for sizing",
+            "5. Swing targets T1, T2, T3 — based on weekly/monthly structure",
+            "6. MA alignment (MA20/50/200) — confirm or warn against the trade",
+            "7. Reversal risk — flag overextension or consolidation breakout risk",
+            "8. Failed breakdown/breakout signals if present",
+            "",
+            "Rules:",
+            "- Think in terms of days to weeks, not hours",
+            "- Weekly and Monthly context takes precedence over Daily noise",
+            "- If multiple timeframes conflict, state the conflict explicitly",
+            "- Be concise — bullet points only",
+        ],
+    },
+    "overnight": {
+        "label":      "Overnight / Futures Open",
+        "timeframes": ["2H", "daily"],
+        "instructions": [
+            "You are analyzing for OVERNIGHT and FUTURES OPEN positioning.",
+            "1. Overnight bias — likely direction heading into next session",
+            "2. Gap risk — is price near a level that could cause a gap open?",
+            "3. Key levels to watch at the open (support, resistance, overnight range)",
+            "4. Options levels (call wall, put wall, gamma flip) — where will price be pinned or repelled?",
+            "5. If bullish open: first resistance. If bearish open: first support.",
+            "6. Any reversal risk or overextension building overnight",
+            "",
+            "Rules:",
+            "- Focus on the next 12-18 hours, not multi-day",
+            "- Overnight range and 2H structure are most important",
+            "- Be concise — bullet points only",
+        ],
+    },
+    "full": {
+        "label":      "Full Analysis",
+        "timeframes": ["monthly", "weekly", "daily", "2H", "15min"],
+        "instructions": [
+            "You are a quantitative trading analyst. Analyze the data below and provide:",
+            "1. Overall directional bias (bullish / bearish / neutral) with reasoning",
+            "2. Key support and resistance levels (from structural highs/lows)",
+            "3. Entry level and trigger condition",
+            "4. Stop loss — use ATR14 from daily timeframe for sizing",
+            "5. Target levels (T1, T2, T3)",
+            "6. Failed breakdown / breakout signals if any levels were recently violated",
+            "7. Reversal risk assessment — flag if price is overextended or in consolidation",
+            "8. If options data is present: reference call wall, put wall, and gamma flip as key S/R levels",
+            "",
+            "Rules:",
+            "- If ⚠ REVERSAL RISK or ⚠ CONSOLIDATING flags are present, address them explicitly",
+            "- If multiple timeframes conflict, state the conflict and which TF takes precedence",
+            "- Options levels (call wall, put wall, gamma flip) are strong magnetic levels — use them",
+            "- Be concise — use bullet points",
+        ],
+    },
+}
+
 # ── Formatters ─────────────────────────────────────────────────────────────────
 def _pct(v):
     if v is None:
@@ -196,12 +280,11 @@ def _options_block(sym, sym_opts):
 
 
 # ── Main builder ───────────────────────────────────────────────────────────────
-def build_prompt(snapshot=None, extra_context="", symbols=None):
+def build_prompt(snapshot=None, extra_context="", symbols=None, profile="full"):
     """
     Build the full LLM prompt from snapshot dict or file.
     symbols: list of tickers to include e.g. ["ES", "SPY"]
-             If None, all symbols in the snapshot are included.
-    Returns a string ready to send as the user message.
+    profile: "intraday" | "swing" | "overnight" | "full"
     """
     if snapshot is None:
         if not SNAPSHOT_PATH.exists() or SNAPSHOT_PATH.stat().st_size == 0:
@@ -212,10 +295,12 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
         except json.JSONDecodeError:
             return "Snapshot file is corrupt — fetch from IBKR to regenerate."
 
-    timestamp      = snapshot.get("timestamp", "unknown")
-    all_symbols    = snapshot.get("symbols", {})
+    timestamp   = snapshot.get("timestamp", "unknown")
+    all_symbols = snapshot.get("symbols", {})
 
-    # Filter to requested symbols only
+    prof = PROFILES.get(profile, PROFILES["full"])
+    tfs  = prof["timeframes"]
+
     if symbols:
         symbols_data = {s: all_symbols[s] for s in symbols if s in all_symbols}
         missing = [s for s in symbols if s not in all_symbols]
@@ -224,29 +309,11 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
     else:
         symbols_data = all_symbols
 
-    symbols = symbols_data
-
     prompt_parts = [
-        f"Market Snapshot — {timestamp}",
+        f"Market Snapshot — {timestamp}  [{prof['label']} Profile]",
         "=" * 60,
         "",
-        "You are a quantitative trading analyst. Analyze the data below and provide:",
-        "1. Overall directional bias (bullish / bearish / neutral) with reasoning",
-        "2. Key support and resistance levels (from structural highs/lows)",
-        "3. Entry level and trigger condition",
-        "4. Stop loss — use ATR14 from daily timeframe for sizing",
-        "5. Target levels (T1, T2, T3)",
-        "6. Failed breakdown / breakout signals if any levels were recently violated",
-        "7. Reversal risk assessment — flag if price is overextended or in consolidation",
-        "8. If options data is present: reference call wall, put wall, and gamma flip as key S/R levels",
-        "",
-        "Rules:",
-        "- If ⚠ REVERSAL RISK or ⚠ CONSOLIDATING flags are present, address them explicitly",
-        "- If multiple timeframes conflict, state the conflict and which TF takes precedence",
-        "- Options levels (call wall, put wall, gamma flip) are strong magnetic levels — use them",
-        "- Be concise — use bullet points",
-        "=" * 60,
-    ]
+    ] + prof["instructions"] + ["=" * 60]
 
     # Load options snapshot if available
     opts_snap = None
@@ -259,7 +326,7 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
 
     for sym, tf_map in symbols_data.items():
         prompt_parts.append(f"\n{'=' * 20} {sym} {'=' * 20}")
-        for tf in ["monthly", "weekly", "daily", "2H", "15min"]:
+        for tf in tfs:
             tf_data = tf_map.get(tf)
             if tf_data:
                 prompt_parts.append(_tf_block(tf, tf_data))
@@ -276,12 +343,12 @@ def build_prompt(snapshot=None, extra_context="", symbols=None):
     return "\n".join(prompt_parts)
 
 
-def build_messages(snapshot=None, extra_context="", symbols=None):
+def build_messages(snapshot=None, extra_context="", symbols=None, profile="full"):
     """Return messages list ready for ai_client.chat()."""
     from tools.ai_client import SYSTEM_PROMPT
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user",   "content": build_prompt(snapshot, extra_context, symbols)},
+        {"role": "user",   "content": build_prompt(snapshot, extra_context, symbols, profile)},
     ]
 
 

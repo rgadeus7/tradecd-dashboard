@@ -352,20 +352,11 @@ def _murrey_math(df, frame=64, mult=1.5):
         abs_top = -(fBot - 3 * inc) if shift else fTop + 3 * inc
 
         levels = {
-            "plus_28":    round(abs_top - 1 * inc, 4),   # +2/8 Extreme Overshoot
-            "plus_18":    round(abs_top - 2 * inc, 4),   # +1/8 Overshoot
-            "eight_eight":round(abs_top - 3 * inc, 4),   # 8/8 Ultimate Resistance
-            "seven_eight":round(abs_top - 4 * inc, 4),   # 7/8 Weak / Stop & Reverse
-            "six_eight":  round(abs_top - 5 * inc, 4),   # 6/8 Strong Pivot
-            "five_eight": round(abs_top - 6 * inc, 4),   # 5/8 Top of Range
-            "four_eight": round(abs_top - 7 * inc, 4),   # 4/8 Major S/R Pivot
-            "three_eight":round(abs_top - 8 * inc, 4),   # 3/8 Bottom of Range
-            "two_eight":  round(abs_top - 9 * inc, 4),   # 2/8 Strong Pivot
-            "one_eight":  round(abs_top - 10 * inc, 4),  # 1/8 Weak / Stop & Reverse
-            "zero_eight": round(abs_top - 11 * inc, 4),  # 0/8 Ultimate Support
-            "minus_18":   round(abs_top - 12 * inc, 4),  # -1/8 Oversold
-            "minus_28":   round(abs_top - 13 * inc, 4),  # -2/8 Extreme Oversold
-            "increment":  round(inc, 4),
+            "plus_28":  round(abs_top - 1 * inc, 4),
+            "plus_18":  round(abs_top - 2 * inc, 4),
+            "minus_18": round(abs_top - 12 * inc, 4),
+            "minus_28": round(abs_top - 13 * inc, 4),
+            "increment": round(inc, 4),
         }
 
         close = float(df.iloc[-1]["close"])

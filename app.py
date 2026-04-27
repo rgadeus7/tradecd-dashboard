@@ -576,6 +576,15 @@ with st.sidebar:
         analysis_syms = []
         st.caption("No snapshot yet — fetch data first")
 
+    analysis_profile = st.radio(
+        "Profile",
+        ["Intraday", "Swing", "Overnight", "Full"],
+        horizontal=True,
+        key="analysis_profile",
+    )
+    profile_map = {"Intraday": "intraday", "Swing": "swing",
+                   "Overnight": "overnight", "Full": "full"}
+
     extra_ctx = st.text_area("Extra context (optional)",
                              placeholder="e.g. FOMC tomorrow, earnings today...")
 
@@ -585,9 +594,11 @@ with st.sidebar:
         elif not analysis_syms:
             st.error("Select at least one symbol to analyse")
         else:
-            with st.spinner(f"Analysing {', '.join(analysis_syms)}..."):
+            profile_key = profile_map[analysis_profile]
+            with st.spinner(f"Analysing {', '.join(analysis_syms)} [{analysis_profile}]..."):
                 snapshot = load_snapshot()
-                messages = build_messages(snapshot, extra_ctx, symbols=analysis_syms)
+                messages = build_messages(snapshot, extra_ctx,
+                                          symbols=analysis_syms, profile=profile_key)
                 reply, provider = chat(messages)
                 if st.session_state.get("tg_ai", True):
                     from tools.telegram import send_message
@@ -626,7 +637,9 @@ with st.sidebar:
     if "sched_jobs" not in st.session_state:
         saved_jobs = _sched_cfg.get("jobs", [{"symbols": ["ES", "SPY"], "times_et": ["15:30"]}])
         st.session_state.sched_jobs = [
-            {"symbols": j.get("symbols", []), "times": ", ".join(j.get("times_et", []))}
+            {"symbols": j.get("symbols", []),
+             "times":   ", ".join(j.get("times_et", [])),
+             "profile": j.get("profile", "full")}
             for j in saved_jobs
         ]
 
@@ -642,9 +655,10 @@ with st.sidebar:
     jobs_state = st.session_state.sched_jobs
     to_remove  = None
 
+    _profile_options = ["intraday", "swing", "overnight", "full"]
     for i, job in enumerate(jobs_state):
         st.caption(f"Job {i + 1}")
-        c1, c2 = st.columns([3, 1])
+        c1, c2, c3 = st.columns([3, 2, 1])
         job["symbols"] = c1.multiselect(
             "Symbols", PRESET_SYMBOLS,
             default=[s for s in job["symbols"] if s in PRESET_SYMBOLS],
@@ -657,6 +671,13 @@ with st.sidebar:
             key=f"sched_times_{i}",
             label_visibility="collapsed",
         )
+        prof_idx = _profile_options.index(job.get("profile", "full"))
+        job["profile"] = c3.selectbox(
+            "Profile", _profile_options,
+            index=prof_idx,
+            key=f"sched_profile_{i}",
+            label_visibility="collapsed",
+        )
         if len(jobs_state) > 1:
             if st.button("Remove", key=f"sched_rm_{i}"):
                 to_remove = i
@@ -666,7 +687,7 @@ with st.sidebar:
         st.rerun()
 
     if st.button("+ Add job", use_container_width=True):
-        st.session_state.sched_jobs.append({"symbols": [], "times": ""})
+        st.session_state.sched_jobs.append({"symbols": [], "times": "", "profile": "full"})
         st.rerun()
 
     _valid = all(j["symbols"] and j["times"].strip() for j in jobs_state)
@@ -674,8 +695,9 @@ with st.sidebar:
                  type="primary", disabled=not _valid):
         cfg_out = {
             "jobs": [
-                {"symbols": j["symbols"],
-                 "times_et": [t.strip() for t in j["times"].split(",") if t.strip()]}
+                {"symbols":  j["symbols"],
+                 "times_et": [t.strip() for t in j["times"].split(",") if t.strip()],
+                 "profile":  j.get("profile", "full")}
                 for j in jobs_state
             ],
             "days":     "sun-fri" if st.session_state.get("sched_days", "Futures (Sun–Fri)").startswith("Futures") else "mon-fri",

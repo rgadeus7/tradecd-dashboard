@@ -70,18 +70,45 @@ def _load_config() -> dict:
         return {}
 
 
-def _run_fetch(symbols: list[str], port: str | None, tg: bool):
-    # Re-read config in case symbols/port/telegram changed since last run
-    cfg    = _load_config()
-    tg     = cfg.get("telegram", tg)
-    port   = cfg.get("port") or port
+def _notify(symbols: list[str], profile: str, now: str):
+    """Send market summary + profile-aware AI analysis to Telegram."""
+    try:
+        import json as _json
+        from tools.prompt_builder import build_messages, PROFILES
+        from tools.ai_client import chat
+        from tools.telegram import send_message, format_snapshot
+
+        snap_path = ROOT / "data" / "market_snapshot.json"
+        if not snap_path.exists():
+            return
+        with open(snap_path) as f:
+            snapshot = _json.load(f)
+
+        # 1. Market summary
+        send_message(format_snapshot(snapshot, symbols))
+
+        # 2. Profile-aware AI analysis
+        prof_label = PROFILES.get(profile, PROFILES["full"])["label"]
+        messages   = build_messages(snapshot, symbols=symbols, profile=profile)
+        reply, _   = chat(messages)
+        send_message(f"<b>AI [{prof_label}] — {', '.join(symbols)} — {now}</b>\n\n{reply}")
+        print(f"  [scheduler] Telegram sent ({prof_label})")
+    except Exception as e:
+        print(f"  [scheduler] Telegram error: {e}")
+
+
+def _run_fetch(symbols: list[str], port: str | None, tg: bool, profile: str = "full"):
+    # Re-read config in case port/telegram changed since last run
+    cfg   = _load_config()
+    tg    = cfg.get("telegram", tg)
+    port  = cfg.get("port") or port
 
     if not symbols:
         print("[scheduler] No symbols configured — skipping")
         return
 
     now = datetime.now(ET).strftime("%Y-%m-%d %H:%M ET")
-    print(f"\n[scheduler] {now}  Fetching {', '.join(symbols)}")
+    print(f"\n[scheduler] {now}  Fetching {', '.join(symbols)}  [{profile}]")
 
     # IBKR health check
     reachable, live_port = _ibkr_reachable(int(port) if port else None)
@@ -91,16 +118,18 @@ def _run_fetch(symbols: list[str], port: str | None, tg: bool):
         _telegram_warn(msg)
         return
 
+    # Always pass --no-telegram to market_data.py — scheduler handles all notifications
     cmd = [sys.executable, str(ROOT / "scripts" / "market_data.py")] + symbols
     if live_port:
         cmd += ["--port", str(live_port)]
-    if not tg:
-        cmd += ["--no-telegram"]
+    cmd += ["--no-telegram"]
 
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         if r.returncode == 0:
-            print(f"  [scheduler] Done ✓")
+            print(f"  [scheduler] Fetch done ✓")
+            if tg:
+                _notify(symbols, profile, now)
         else:
             err = r.stderr[-300:]
             print(f"  [scheduler] ERROR:\n{err}")
@@ -122,20 +151,21 @@ def _build_scheduler(cfg: dict) -> BlockingScheduler:
     total    = 0
 
     for ji, job in enumerate(jobs):
-        syms  = job.get("symbols", [])
-        times = job.get("times_et", [])
+        syms    = job.get("symbols", [])
+        times   = job.get("times_et", [])
+        profile = job.get("profile", "full")
         for t in times:
             h, m = t.strip().split(":")
             sched.add_job(
                 _run_fetch,
                 trigger=CronTrigger(day_of_week=dow,
                                     hour=int(h), minute=int(m), timezone=ET),
-                args=[syms, cfg.get("port"), cfg.get("telegram", True)],
+                args=[syms, cfg.get("port"), cfg.get("telegram", True), profile],
                 id=f"job{ji}_{t.replace(':', '')}",
-                name=f"{t} ET — {', '.join(syms)}",
+                name=f"{t} ET [{profile}] — {', '.join(syms)}",
             )
             total += 1
-        print(f"  Job {ji+1}: {', '.join(syms)}  @  {', '.join(times)} ET")
+        print(f"  Job {ji+1}: {', '.join(syms)}  @  {', '.join(times)} ET  [{profile}]")
 
     print(f"[scheduler] {total} trigger(s) registered  ({dow_label})")
     return sched
